@@ -1,0 +1,385 @@
+<!-- Portfolio & History -->
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Portfolio &amp; History - EquiSynth AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#723600",
+                        "on-secondary-fixed": "#111c2d",
+                        "surface-container-high": "#272a31",
+                        "on-primary-fixed-variant": "#004395",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-secondary": "#263143",
+                        "on-background": "#e1e2ec",
+                        "on-secondary-container": "#aeb9d0",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed": "#311400",
+                        "on-primary-fixed": "#001a42",
+                        "outline": "#8c909f",
+                        "on-error-container": "#ffdad6",
+                        "surface-tint": "#adc6ff",
+                        "primary-container": "#4d8eff",
+                        "inverse-primary": "#005ac2",
+                        "surface-container-lowest": "#0b0e15",
+                        "on-surface": "#e1e2ec",
+                        "surface-dim": "#10131a",
+                        "surface-container-low": "#191b23",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2e3038",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary": "#502400",
+                        "surface-container-highest": "#32353c",
+                        "tertiary": "#ffb786",
+                        "inverse-surface": "#e1e2ec",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "on-tertiary-container": "#461f00",
+                        "primary": "#adc6ff",
+                        "secondary": "#bcc7de",
+                        "secondary-container": "#3e495d",
+                        "tertiary-container": "#df7412",
+                        "surface": "#10131a",
+                        "on-primary-container": "#00285d",
+                        "surface-container": "#1d2027",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-fixed": "#ffdcc6",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "surface-bright": "#363941",
+                        "secondary-fixed": "#d8e3fb",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "outline-variant": "#424754",
+                        "background": "#10131a",
+                        "surface-variant": "#32353c",
+                        "on-primary": "#002e6a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "16px",
+                        "margin-desktop": "40px",
+                        "xl": "48px",
+                        "xs": "8px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "md": "24px",
+                        "lg": "32px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "data-mono": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-card {
+            background-color: rgba(25, 27, 35, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .text-semantic-green { color: #34d399; } /* Custom semantic, close to theme if needed, but standardizing on primary for now to stick to config where possible, using custom for data viz */
+        .text-semantic-red { color: #f87171; }
+        .bg-semantic-green-15 { background-color: rgba(52, 211, 153, 0.15); }
+        .bg-semantic-red-15 { background-color: rgba(248, 113, 113, 0.15); }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col font-body-md">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 dark:bg-surface/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-white/10 shadow-sm flex justify-between items-center w-full px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-xl">
+<span class="font-display-lg text-display-lg font-bold text-primary">EquiSynth AI</span>
+<div class="hidden md:flex gap-lg items-center mt-2">
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-md text-body-md hover:text-primary transition-colors duration-200 opacity-80" href="portfolio.html">Saved Tickers</a>
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-primary transition-colors duration-200" href="portfolio.html">Portfolio</a>
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-primary transition-colors duration-200" href="analysis.html">Analysis</a>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">history</span>
+</button>
+<div class="h-10 w-10 rounded-full bg-surface-variant overflow-hidden border border-outline-variant/30">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional individual looking confident. The lighting is soft and flattering, set against a dark, sophisticated backdrop that matches a modern financial application aesthetic. The image is crisp, conveying trust and professionalism within a high-tech UI environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPs3_3yitFoVAuhs_bYq9SksPNUb_JzU2CMDKhnCkHC4Ve699OV9hUtnJ1NS5eRxUXroCk2yV92S2HSAsM8_o_2t1pzSCgj3Cf3nohMG_zPKMDVwVZ87pl-rSQjdKMzfn_sPDyETQdE5_Gh7NivkwfDD7wFeuOCCzfHkqqax77wV77v710Zo0-y3Yk5sFwa1xUZmw8AZHg5fLaXW_xNqVzCnxNrGv44v40QcAX_z7WfHS_JiL7F1mAaN891RquEBTLvgkAQcXV8OFN"/>
+</div>
+</div>
+</nav>
+<main class="flex-grow w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-xl flex flex-col gap-xl">
+<!-- Header Section -->
+<header class="flex flex-col gap-xs">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Portfolio &amp; History</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitor your saved assets and review recent AI analysis.</p>
+</header>
+<!-- Saved Tickers Grid -->
+<section class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">bookmark</span>
+                Saved Tickers
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Ticker Card 1 -->
+<div class="glass-card rounded-xl p-lg flex flex-col gap-md hover:bg-surface-variant/30 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">AAPL</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Apple Inc.</div>
+</div>
+<div class="bg-semantic-green-15 text-semantic-green px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                            Buy
+                        </div>
+</div>
+<div class="flex-grow h-24 bg-surface-container-lowest/50 rounded-lg flex items-center justify-center border border-outline-variant/10 overflow-hidden relative">
+<!-- Placeholder for Sparkline -->
+<svg class="absolute inset-0 opacity-70" height="100%" preserveaspectratio="none" viewbox="0 0 200 50" width="100%">
+<path d="M0 40 Q 20 30, 40 45 T 80 20 T 120 35 T 160 10 T 200 15 L 200 50 L 0 50 Z" fill="rgba(52, 211, 153, 0.1)"></path>
+<path d="M0 40 Q 20 30, 40 45 T 80 20 T 120 35 T 160 10 T 200 15" fill="none" stroke="#34d399" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex justify-between items-end">
+<div class="font-data-mono text-data-mono text-on-surface text-lg">
+                            $173.50
+                        </div>
+<div class="font-data-mono text-data-mono text-semantic-green text-sm flex items-center">
+                            +1.2%
+                        </div>
+</div>
+</div>
+<!-- Ticker Card 2 -->
+<div class="glass-card rounded-xl p-lg flex flex-col gap-md hover:bg-surface-variant/30 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">TSLA</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Tesla, Inc.</div>
+</div>
+<div class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+                            Hold
+                        </div>
+</div>
+<div class="flex-grow h-24 bg-surface-container-lowest/50 rounded-lg flex items-center justify-center border border-outline-variant/10 overflow-hidden relative">
+<!-- Placeholder for Sparkline -->
+<svg class="absolute inset-0 opacity-70" height="100%" preserveaspectratio="none" viewbox="0 0 200 50" width="100%">
+<path d="M0 20 Q 20 35, 40 25 T 80 30 T 120 20 T 160 35 T 200 25 L 200 50 L 0 50 Z" fill="rgba(194, 198, 214, 0.1)"></path>
+<path d="M0 20 Q 20 35, 40 25 T 80 30 T 120 20 T 160 35 T 200 25" fill="none" stroke="#c2c6d6" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex justify-between items-end">
+<div class="font-data-mono text-data-mono text-on-surface text-lg">
+                            $185.10
+                        </div>
+<div class="font-data-mono text-data-mono text-on-surface-variant text-sm flex items-center">
+                            -0.4%
+                        </div>
+</div>
+</div>
+<!-- Ticker Card 3 -->
+<div class="glass-card rounded-xl p-lg flex flex-col gap-md hover:bg-surface-variant/30 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">NVDA</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">NVIDIA Corp.</div>
+</div>
+<div class="bg-semantic-green-15 text-semantic-green px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                            Strong Buy
+                        </div>
+</div>
+<div class="flex-grow h-24 bg-surface-container-lowest/50 rounded-lg flex items-center justify-center border border-outline-variant/10 overflow-hidden relative">
+<!-- Placeholder for Sparkline -->
+<svg class="absolute inset-0 opacity-70" height="100%" preserveaspectratio="none" viewbox="0 0 200 50" width="100%">
+<path d="M0 45 Q 20 40, 40 30 T 80 15 T 120 20 T 160 5 T 200 10 L 200 50 L 0 50 Z" fill="rgba(52, 211, 153, 0.1)"></path>
+<path d="M0 45 Q 20 40, 40 30 T 80 15 T 120 20 T 160 5 T 200 10" fill="none" stroke="#34d399" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex justify-between items-end">
+<div class="font-data-mono text-data-mono text-on-surface text-lg">
+                            $875.28
+                        </div>
+<div class="font-data-mono text-data-mono text-semantic-green text-sm flex items-center">
+                            +3.8%
+                        </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Two Column Layout for History & Discover -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Recent Activity Table -->
+<section class="lg:col-span-2 flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">history</span>
+                    Recent Search History
+                </h2>
+<div class="glass-card rounded-xl overflow-hidden">
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-white/5 bg-surface-container-low/50 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="p-md font-medium">Asset</th>
+<th class="p-md font-medium">Date Reviewed</th>
+<th class="p-md font-medium">Sentiment Summary</th>
+<th class="p-md font-medium text-right">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md divide-y divide-white/5">
+<tr class="hover:bg-surface-variant/20 transition-colors">
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<div class="h-8 w-8 rounded bg-surface-variant flex items-center justify-center font-data-mono text-sm">MSFT</div>
+<span class="font-medium text-on-surface">Microsoft Corp.</span>
+</div>
+</td>
+<td class="p-md text-on-surface-variant font-data-mono text-sm">Oct 24, 09:41 AM</td>
+<td class="p-md">
+<div class="flex items-center gap-2">
+<span class="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.8)]"></span>
+<span class="text-on-surface truncate max-w-[200px] block">Positive earnings forecast driven by cloud growth...</span>
+</div>
+</td>
+<td class="p-md text-right">
+<button class="text-primary hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">open_in_new</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/20 transition-colors">
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<div class="h-8 w-8 rounded bg-surface-variant flex items-center justify-center font-data-mono text-sm">AMD</div>
+<span class="font-medium text-on-surface">Advanced Micro Devices</span>
+</div>
+</td>
+<td class="p-md text-on-surface-variant font-data-mono text-sm">Oct 23, 14:22 PM</td>
+<td class="p-md">
+<div class="flex items-center gap-2">
+<span class="h-2 w-2 rounded-full bg-tertiary-container shadow-[0_0_8px_rgba(223,116,18,0.8)]"></span>
+<span class="text-on-surface truncate max-w-[200px] block">Mixed signals in supply chain, awaiting guidance...</span>
+</div>
+</td>
+<td class="p-md text-right">
+<button class="text-primary hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">open_in_new</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/20 transition-colors">
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<div class="h-8 w-8 rounded bg-surface-variant flex items-center justify-center font-data-mono text-sm">META</div>
+<span class="font-medium text-on-surface">Meta Platforms</span>
+</div>
+</td>
+<td class="p-md text-on-surface-variant font-data-mono text-sm">Oct 21, 11:05 AM</td>
+<td class="p-md">
+<div class="flex items-center gap-2">
+<span class="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.8)]"></span>
+<span class="text-on-surface truncate max-w-[200px] block">Strong ad revenue recovery noted in recent transcripts.</span>
+</div>
+</td>
+<td class="p-md text-right">
+<button class="text-primary hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">open_in_new</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Discover Section -->
+<section class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">explore</span>
+                    Trending Discoveries
+                </h2>
+<div class="glass-card rounded-xl p-md flex flex-col gap-md">
+<p class="font-label-sm text-label-sm text-on-surface-variant">Live suggestions based on network activity.</p>
+<div class="flex flex-col gap-sm">
+<!-- Suggestion Item -->
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-sm flex items-center justify-between hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="bg-surface-variant text-on-surface font-data-mono text-sm px-2 py-1 rounded">PLTR</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface">Palantir Tech</span>
+<span class="font-label-sm text-label-sm text-semantic-green">+5.2% Vol</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_forward</span>
+</div>
+<!-- Suggestion Item -->
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-sm flex items-center justify-between hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="bg-surface-variant text-on-surface font-data-mono text-sm px-2 py-1 rounded">ARM</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface">Arm Holdings</span>
+<span class="font-label-sm text-label-sm text-semantic-green">+8.1% Vol</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_forward</span>
+</div>
+<!-- Suggestion Item -->
+<div class="bg-surface-container-low/50 border border-white/5 rounded-lg p-sm flex items-center justify-between hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<div class="bg-surface-variant text-on-surface font-data-mono text-sm px-2 py-1 rounded">CRWD</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface">CrowdStrike</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant text-opacity-70">Elevated mentions</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">arrow_forward</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-dim dark:bg-surface-dim full-width py-lg mt-auto border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center px-margin-desktop gap-md">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary">© 2024 EquiSynth Intelligence Unit</span>
+<div class="flex gap-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all focus:ring-2 focus:ring-primary" href="portfolio.html">History</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all focus:ring-2 focus:ring-primary" href="settings.html">Settings</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all focus:ring-2 focus:ring-primary" href="#">Developer API</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary underline transition-all focus:ring-2 focus:ring-primary" href="#">Privacy Policy</a>
+</div>
+</footer>
+</body></html>
