@@ -27,6 +27,26 @@ jobs:
         working-directory: backend
         run: pytest tests/api -v
 
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff
+        working-directory: backend
+        run: ruff check .
+
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
