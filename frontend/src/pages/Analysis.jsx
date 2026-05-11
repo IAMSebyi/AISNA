@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { analyzeNewsSentiment, summarizeNews } from '../services/analysisApi';
 import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesStorage';
+import { addSearchHistoryItem, clearSearchHistory, getSearchHistory } from '../services/searchHistoryStorage';
 import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
 
 const initialArticles = [
@@ -61,6 +62,7 @@ export default function Analysis() {
   const [newsArticles, setNewsArticles] = useState([]);
   const [showArticleEditor, setShowArticleEditor] = useState(false);
   const [, setFavoriteTickersVersion] = useState(0);
+  const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
 
   const normalizedSymbol = normalizeStockSymbol(symbol);
   const symbolIsValid = isValidStockSymbol(symbol);
@@ -130,12 +132,24 @@ export default function Analysis() {
           content: article.content || '',
         })));
         setLastFetchedSymbol(normalizedSymbol);
+        setSearchHistory(addSearchHistoryItem(normalizedSymbol));
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch news.');
     } finally {
       setIsFetchingNews(false);
     }
+  };
+
+  const handleUseHistoryItem = (historySymbol) => {
+    setSymbol(historySymbol);
+    setError('');
+    setNewsNotice('');
+  };
+
+  const handleClearHistory = () => {
+    clearSearchHistory();
+    setSearchHistory([]);
   };
 
   const handleToggleFavorite = () => {
@@ -213,37 +227,35 @@ export default function Analysis() {
                 <h2 className="font-headline-md text-headline-md text-on-surface">Input</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">Search a ticker, fetch news, then send the article context to the agents.</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
-                  type="button"
-                  onClick={resetSample}
-                >
-                  <span className="material-symbols-outlined text-base">restart_alt</span>
-                  Sample
-                </button>
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-primary hover:text-primary-fixed hover:border-primary transition-colors font-label-sm text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  type="button"
-                  onClick={handleFetchNews}
-                  disabled={isFetchingNews || !symbolIsValid}
-                >
-                  <span className={`material-symbols-outlined text-base ${isFetchingNews ? 'animate-spin' : ''}`}>{isFetchingNews ? 'sync' : 'search'}</span>
-                  {isFetchingNews ? 'Searching...' : 'Search Ticker'}
-                </button>
-              </div>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
+                type="button"
+                onClick={resetSample}
+              >
+                <span className="material-symbols-outlined text-base">restart_alt</span>
+                Sample
+              </button>
             </div>
 
             <label className="flex flex-col gap-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Ticker</span>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
                 <input
-                  className={`min-w-0 flex-1 rounded-lg border bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary ${symbol && !symbolIsValid ? 'border-error/70' : 'border-outline-variant/40'}`}
+                  className={`min-w-0 rounded-lg border bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary ${symbol && !symbolIsValid ? 'border-error/70' : 'border-outline-variant/40'}`}
                   maxLength={12}
                   value={symbol}
                   onChange={(event) => setSymbol(normalizeStockSymbol(event.target.value))}
                   placeholder="AAPL"
                 />
+                <button
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-on-primary hover:bg-primary-fixed transition-colors font-label-sm text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleFetchNews}
+                  disabled={isFetchingNews || !symbolIsValid}
+                >
+                  <span className={`material-symbols-outlined text-base ${isFetchingNews ? 'animate-spin' : ''}`}>{isFetchingNews ? 'sync' : 'search'}</span>
+                  {isFetchingNews ? 'Searching' : 'Search'}
+                </button>
                 <button
                   className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isCurrentTickerFavorite ? 'border-primary/50 bg-primary/10 text-primary' : 'border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:border-primary'}`}
                   type="button"
@@ -260,6 +272,12 @@ export default function Analysis() {
                 {lastFetchedSymbol && <span>Loaded: {lastFetchedSymbol}</span>}
               </div>
             </label>
+
+            <SearchHistoryPanel
+              history={searchHistory.slice(0, 5)}
+              onClear={handleClearHistory}
+              onSelect={handleUseHistoryItem}
+            />
           </div>
 
           <div className="glass-panel rounded-xl p-lg flex flex-col gap-md">
@@ -358,6 +376,7 @@ export default function Analysis() {
 
           {newsNotice && <AlertMessage tone="warning" message={newsNotice} />}
           {error && <AlertMessage tone="error" message={error} />}
+
         </section>
 
         <section className="xl:col-span-7 flex flex-col gap-md">
@@ -383,6 +402,63 @@ function AlertMessage({ message, tone }) {
       </div>
     </div>
   );
+}
+
+function SearchHistoryPanel({ history, onClear, onSelect }) {
+  if (history.length === 0) {
+    return (
+      <section className="rounded-lg border border-outline-variant/20 bg-surface-container/50 p-md flex items-center gap-3 text-on-surface-variant">
+        <span className="material-symbols-outlined text-outline text-base">history</span>
+        <div className="min-w-0">
+          <h3 className="font-label-sm text-label-sm text-on-surface">Recent Searches</h3>
+          <p className="font-data-mono text-[11px]">Searched tickers will appear here.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-outline-variant/20 bg-surface-container/50 p-md flex flex-col gap-sm">
+      <div className="flex items-center justify-between gap-md">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary text-base">history</span>
+          <h3 className="font-label-sm text-label-sm text-on-surface">Recent Searches</h3>
+        </div>
+        <button
+          className="inline-flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm"
+          type="button"
+          onClick={onClear}
+        >
+          <span className="material-symbols-outlined text-base">delete_sweep</span>
+          Clear
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-sm">
+        {history.map((item) => (
+          <button
+            className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container/60 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-data-mono text-data-mono"
+            type="button"
+            onClick={() => onSelect(item.symbol)}
+            key={`${item.symbol}-${item.searchedAt}`}
+            title={`Searched ${formatHistoryTime(item.searchedAt)}`}
+          >
+            <span>{item.symbol}</span>
+            <span className="material-symbols-outlined text-base">north_west</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function formatHistoryTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'recently';
+  }
+
+  return date.toLocaleString();
 }
 
 function NewsArticlesPanel({ articles, isLoading, symbol }) {
