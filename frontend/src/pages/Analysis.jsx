@@ -56,6 +56,8 @@ export default function Analysis() {
   const [isFetchingNews, setIsFetchingNews] = useState(false);
   const [error, setError] = useState('');
   const [lastFetchedSymbol, setLastFetchedSymbol] = useState('');
+  const [newsArticles, setNewsArticles] = useState([]);
+  const [showArticleEditor, setShowArticleEditor] = useState(false);
 
   const normalizedSymbol = normalizeStockSymbol(symbol);
   const symbolIsValid = isValidStockSymbol(symbol);
@@ -87,6 +89,8 @@ export default function Analysis() {
     setSentiment(null);
     setError('');
     setLastFetchedSymbol('');
+    setNewsArticles([]);
+    setShowArticleEditor(false);
   };
 
   const handleFetchNews = async () => {
@@ -104,7 +108,10 @@ export default function Analysis() {
       const fetchedArticles = await fetchStockNews(normalizedSymbol, 5);
       if (fetchedArticles.length === 0) {
         setError('No news articles found for this ticker.');
+        setNewsArticles([]);
       } else {
+        setNewsArticles(fetchedArticles);
+        setShowArticleEditor(false);
         setArticles(fetchedArticles.map(article => ({
           title: article.title || '',
           source: article.source || '',
@@ -221,64 +228,86 @@ export default function Analysis() {
             </label>
           </div>
 
-          <div className="flex flex-col gap-md">
-            {articles.map((article, index) => (
-              <article className="glass-panel rounded-xl p-lg flex flex-col gap-md" key={index}>
-                <div className="flex items-center justify-between gap-md">
-                  <h3 className="font-headline-md text-headline-md text-on-surface">Article {index + 1}</h3>
-                  {articles.length > 1 && (
-                    <button
-                      className="text-on-surface-variant hover:text-error transition-colors"
-                      type="button"
-                      onClick={() => removeArticle(index)}
-                      aria-label={`Remove article ${index + 1}`}
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  )}
-                </div>
+          <div className="glass-panel rounded-xl p-lg flex flex-col gap-md">
+            <div className="flex items-center justify-between gap-md">
+              <div>
+                <h2 className="font-headline-md text-headline-md text-on-surface">Agent Article Context</h2>
+                <p className="font-body-md text-body-md text-on-surface-variant mt-1">{articles.length} article{articles.length === 1 ? '' : 's'} ready for analysis.</p>
+              </div>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
+                type="button"
+                onClick={() => setShowArticleEditor((current) => !current)}
+              >
+                <span className="material-symbols-outlined text-base">{showArticleEditor ? 'expand_less' : 'edit_note'}</span>
+                {showArticleEditor ? 'Hide Editor' : 'Edit Articles'}
+              </button>
+            </div>
 
-                <input
-                  className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                  value={article.title}
-                  onChange={(event) => updateArticle(index, 'title', event.target.value)}
-                  placeholder="Article title"
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                  <input
-                    className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                    value={article.source}
-                    onChange={(event) => updateArticle(index, 'source', event.target.value)}
-                    placeholder="Source"
-                  />
-                  <input
-                    className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                    value={article.published_at}
-                    onChange={(event) => updateArticle(index, 'published_at', event.target.value)}
-                    placeholder="Published date"
-                  />
-                </div>
-                <input
-                  className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                  value={article.url}
-                  onChange={(event) => updateArticle(index, 'url', event.target.value)}
-                  placeholder="URL"
-                />
-                <textarea
-                  className="min-h-28 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                  value={article.content}
-                  onChange={(event) => updateArticle(index, 'content', event.target.value)}
-                  placeholder="Article content"
-                />
-              </article>
-            ))}
+            {showArticleEditor && (
+              <div className="flex flex-col gap-md">
+                {articles.map((article, index) => (
+                  <article className="rounded-lg border border-outline-variant/20 bg-surface-container/60 p-md flex flex-col gap-md" key={index}>
+                    <div className="flex items-center justify-between gap-md">
+                      <h3 className="font-label-sm text-label-sm text-on-surface">Article {index + 1}</h3>
+                      {articles.length > 1 && (
+                        <button
+                          className="text-on-surface-variant hover:text-error transition-colors"
+                          type="button"
+                          onClick={() => removeArticle(index)}
+                          aria-label={`Remove article ${index + 1}`}
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      value={article.title}
+                      onChange={(event) => updateArticle(index, 'title', event.target.value)}
+                      placeholder="Article title"
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                      <input
+                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        value={article.source}
+                        onChange={(event) => updateArticle(index, 'source', event.target.value)}
+                        placeholder="Source"
+                      />
+                      <input
+                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        value={article.published_at}
+                        onChange={(event) => updateArticle(index, 'published_at', event.target.value)}
+                        placeholder="Published date"
+                      />
+                    </div>
+                    <input
+                      className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      value={article.url}
+                      onChange={(event) => updateArticle(index, 'url', event.target.value)}
+                      placeholder="URL"
+                    />
+                    <textarea
+                      className="min-h-28 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      value={article.content}
+                      onChange={(event) => updateArticle(index, 'content', event.target.value)}
+                      placeholder="Article content"
+                    />
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-sm">
             <button
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-outline-variant/40 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
               type="button"
-              onClick={addArticle}
+              onClick={() => {
+                addArticle();
+                setShowArticleEditor(true);
+              }}
             >
               <span className="material-symbols-outlined">add</span>
               Add Article
@@ -302,12 +331,79 @@ export default function Analysis() {
 
         <section className="xl:col-span-7 flex flex-col gap-md">
           <AgentStatus isLoading={isLoading} summary={summary} sentiment={sentiment} />
+          <NewsArticlesPanel articles={newsArticles} isLoading={isFetchingNews} symbol={lastFetchedSymbol || normalizedSymbol} />
           <RecommendationPanel sentiment={sentiment} />
           <SummaryPanel summary={summary} />
           <SentimentPanel sentiment={sentiment} />
         </section>
       </form>
     </div>
+  );
+}
+
+function NewsArticlesPanel({ articles, isLoading, symbol }) {
+  if (isLoading) {
+    return <EmptyPanel title="Latest News" icon="newspaper" text={`Searching news for ${symbol}.`} />;
+  }
+
+  if (articles.length === 0) {
+    return <EmptyPanel title="Latest News" icon="newspaper" text="Search a ticker to display the latest news articles." />;
+  }
+
+  return (
+    <section className="glass-panel rounded-xl p-lg flex flex-col gap-md">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-sm">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary">newspaper</span>
+          <h2 className="font-headline-md text-headline-md text-on-surface">Latest News</h2>
+        </div>
+        <span className="font-data-mono text-data-mono text-on-surface-variant">
+          {symbol} - {articles.length} article{articles.length === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-sm">
+        {articles.map((article, index) => (
+          <NewsArticleCard article={article} index={index} key={`${article.title}-${index}`} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NewsArticleCard({ article, index }) {
+  const normalizedSentiment = (article.sentiment || 'neutral').toLowerCase();
+  const sentimentStyle = sentimentStyles[normalizedSentiment] || sentimentStyles.neutral;
+  const description = article.description || article.content || 'No description available.';
+
+  return (
+    <article className="rounded-lg border border-outline-variant/20 bg-surface-container/60 p-md flex flex-col gap-sm">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-sm">
+        <div className="flex flex-col gap-1">
+          <div className="font-data-mono text-[11px] text-on-surface-variant">
+            #{index + 1} - {article.source || 'Unknown source'}{article.published_at ? ` - ${article.published_at}` : ''}
+          </div>
+          <h3 className="font-label-sm text-label-sm text-on-surface">{article.title || 'Untitled article'}</h3>
+        </div>
+        {article.sentiment && (
+          <span className={`inline-flex w-fit rounded border px-2 py-1 font-label-sm text-[11px] uppercase ${sentimentStyle}`}>
+            {article.sentiment}
+          </span>
+        )}
+      </div>
+      <p className="font-body-md text-body-md text-on-surface-variant">{description}</p>
+      {article.url && (
+        <a
+          className="inline-flex w-fit items-center gap-1 text-primary hover:text-primary-fixed font-label-sm text-label-sm"
+          href={article.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open article
+          <span className="material-symbols-outlined text-base">open_in_new</span>
+        </a>
+      )}
+    </article>
   );
 }
 
