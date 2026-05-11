@@ -16,12 +16,6 @@ export default function TopNavBar() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-on-surface-variant hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="text-on-surface-variant hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">history</span>
-          </button>
           <div className="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline/30">
             <img alt="User profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCevc7ApJNlfWSqI8A0neEh6jt3f3kEixNqsBssOFi3o-4syEDmeASZ3bas9gxLggnLTVYOP2nBprBcjbynu1HIDfWLh-Ez1pGH6scgFWufLbTpzn7SedbPAn6xYt42j3_m5bqqeQQVlY6bdfWmfPNW5Yh2iW6P_8XWt9DcBW1QKxMF1N0qIVwr8oFlUCPvOZMdyBynvps0fToqRJ7k8nZy2QjOjZswXOMQGroDR1Nlfz8OvqIjU9hH7mypWpYe1gNHeXsf98aySsdM"/>
           </div>

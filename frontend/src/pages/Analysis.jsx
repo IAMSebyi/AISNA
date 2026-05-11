@@ -63,6 +63,7 @@ export default function Analysis() {
   const [showArticleEditor, setShowArticleEditor] = useState(false);
   const [, setFavoriteTickersVersion] = useState(0);
   const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
+  const [activeResultPanel, setActiveResultPanel] = useState('');
 
   const normalizedSymbol = normalizeStockSymbol(symbol);
   const symbolIsValid = isValidStockSymbol(symbol);
@@ -93,6 +94,7 @@ export default function Analysis() {
     setSymbol('AAPL');
     setSummary(null);
     setSentiment(null);
+    setActiveResultPanel('');
     setError('');
     setNewsNotice('');
     setLastFetchedSymbol('');
@@ -111,6 +113,7 @@ export default function Analysis() {
     setNewsNotice('');
     setSummary(null);
     setSentiment(null);
+    setActiveResultPanel('');
 
     try {
       const fetchedArticles = await fetchStockNews(normalizedSymbol, 5);
@@ -171,6 +174,7 @@ export default function Analysis() {
     setNewsNotice('');
     setSummary(null);
     setSentiment(null);
+    setActiveResultPanel('');
 
     const payload = {
       symbol: normalizedSymbol,
@@ -196,6 +200,7 @@ export default function Analysis() {
 
       setSummary(summaryResult);
       setSentiment(sentimentResult);
+      setActiveResultPanel('');
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -380,11 +385,15 @@ export default function Analysis() {
         </section>
 
         <section className="xl:col-span-7 flex flex-col gap-md">
-          <AgentStatus isLoading={isLoading} summary={summary} sentiment={sentiment} />
+          <AgentStatus
+            activePanel={activeResultPanel}
+            isLoading={isLoading}
+            onSelect={setActiveResultPanel}
+            summary={summary}
+            sentiment={sentiment}
+          />
           <NewsArticlesPanel articles={newsArticles} isLoading={isFetchingNews} symbol={lastFetchedSymbol || normalizedSymbol} />
-          <RecommendationPanel sentiment={sentiment} />
-          <SummaryPanel summary={summary} />
-          <SentimentPanel sentiment={sentiment} />
+          <ResultPanelHost activePanel={activeResultPanel} sentiment={sentiment} summary={summary} />
         </section>
       </form>
     </div>
@@ -527,26 +536,62 @@ function NewsArticleCard({ article, index }) {
   );
 }
 
-function AgentStatus({ isLoading, summary, sentiment }) {
+function AgentStatus({ activePanel, isLoading, onSelect, summary, sentiment }) {
   const statusItems = [
-    { label: 'News Summarizer', done: Boolean(summary), icon: 'summarize' },
-    { label: 'Sentiment Agent', done: Boolean(sentiment), icon: 'psychology' },
-    { label: 'Recommendation Logic', done: Boolean(sentiment?.recommendation), icon: 'rule' },
+    { id: 'summary', label: 'News Summarizer', done: Boolean(summary), icon: 'summarize' },
+    { id: 'sentiment', label: 'Sentiment Agent', done: Boolean(sentiment), icon: 'psychology' },
+    { id: 'recommendation', label: 'Recommendation Logic', done: Boolean(sentiment?.recommendation), icon: 'rule' },
   ];
+
+  const handleSelect = (item) => {
+    if (!item.done) return;
+
+    onSelect(item.id);
+    window.requestAnimationFrame(() => {
+      document.getElementById('agent-result-panel')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
       {statusItems.map((item) => (
-        <div className="glass-panel rounded-xl p-md flex items-center gap-3" key={item.label}>
+        <button
+          className={`glass-panel rounded-xl p-md flex items-center gap-3 text-left transition-colors ${item.done ? 'hover:border-primary cursor-pointer' : 'cursor-default'} ${activePanel === item.id ? 'border-primary/60 bg-primary/10' : ''}`}
+          key={item.label}
+          type="button"
+          onClick={() => handleSelect(item)}
+          disabled={!item.done}
+        >
           <span className={`material-symbols-outlined ${item.done ? 'text-primary' : 'text-outline'}`}>{item.icon}</span>
           <div>
             <div className="font-label-sm text-label-sm text-on-surface">{item.label}</div>
             <div className="font-data-mono text-[11px] text-on-surface-variant">
-              {item.done ? 'Complete' : isLoading ? 'Running' : 'Waiting'}
+              {item.done ? 'Complete - open' : isLoading ? 'Running' : 'Waiting'}
             </div>
           </div>
-        </div>
+        </button>
       ))}
+    </div>
+  );
+}
+
+function ResultPanelHost({ activePanel, sentiment, summary }) {
+  if (!summary && !sentiment) {
+    return <EmptyPanel title="Agent Results" icon="insights" text="Run the agents, then open completed result cards above." />;
+  }
+
+  if (!activePanel) {
+    return <EmptyPanel title="Agent Results" icon="touch_app" text="Select a completed result card to inspect the output." />;
+  }
+
+  return (
+    <div id="agent-result-panel" className="scroll-mt-24">
+      {activePanel === 'summary' && <SummaryPanel summary={summary} />}
+      {activePanel === 'sentiment' && <SentimentPanel sentiment={sentiment} />}
+      {activePanel === 'recommendation' && <RecommendationPanel sentiment={sentiment} />}
     </div>
   );
 }
