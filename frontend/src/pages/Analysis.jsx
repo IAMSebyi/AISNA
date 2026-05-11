@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { analyzeNewsSentiment, summarizeNews } from '../services/analysisApi';
+import { analyzeNewsReport } from '../services/analysisApi';
 import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesStorage';
 import { addSearchHistoryItem, clearSearchHistory, getSearchHistory } from '../services/searchHistoryStorage';
 import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
@@ -193,13 +193,13 @@ export default function Analysis() {
     };
 
     try {
-      const [summaryResult, sentimentResult] = await Promise.all([
-        summarizeNews(payload),
-        analyzeNewsSentiment(payload),
-      ]);
+      const report = await analyzeNewsReport(payload);
 
-      setSummary(summaryResult);
-      setSentiment(sentimentResult);
+      setSummary(report.summary);
+      setSentiment({
+        ...report.sentiment,
+        recommendation: report.recommendation,
+      });
       setActiveResultPanel('');
     } catch (requestError) {
       setError(requestError.message);

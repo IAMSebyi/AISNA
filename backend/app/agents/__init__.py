@@ -1,5 +1,4 @@
 from app.agents.base import BaseAgent
-from app.agents.news_sentiment import NewsSentimentAgent
-from app.agents.news_summarizer import NewsSummarizerAgent
+from app.agents.news_report import NewsReportAgent
 
-__all__ = ["BaseAgent", "NewsSentimentAgent", "NewsSummarizerAgent"]
+__all__ = ["BaseAgent", "NewsReportAgent"]

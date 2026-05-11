@@ -9,17 +9,15 @@ AISNA (AI Stock News Analyzer) is an application that allows users to enter a st
 - sentiment analysis of the news
 - a simple Buy / Hold / Sell recommendation
 
-The project includes two AI agents:
+The main AI workflow uses one combined report agent:
 
-- News Summarizer Agent - summarizes news articles about the selected company
-- Sentiment & Recommendation Agent - analyzes sentiment and provides a simple recommendation
+- News Report Agent - summarizes supplied news articles and analyzes sentiment in one OpenAI call
 
 This project is developed as part of the Software Development Methods laboratory course at the Faculty of Mathematics and Computer Science, University of Bucharest.
 
 ## Current Backend Features
 
-- OpenAI-backed News Summarizer Agent
-- OpenAI-backed News Sentiment Agent
+- OpenAI-backed News Report Agent for summary and sentiment analysis
 - Deterministic Buy / Hold / Sell recommendation logic based on sentiment results
 - Evaluation workflow for summary quality, sentiment labels, and recommendation logic
 - FastAPI endpoints exposed under `/api/v1`
@@ -63,21 +61,13 @@ http://127.0.0.1:8010/docs
 
 ## AI Agent Endpoints
 
-### News Summary
+### News Report
 
 ```text
-POST /api/v1/analysis/news-summary
+POST /api/v1/analysis/news-report
 ```
 
-Generates a structured summary, key points, risks, and citations for supplied news articles.
-
-### News Sentiment and Recommendation
-
-```text
-POST /api/v1/analysis/news-sentiment
-```
-
-Analyzes supplied news articles as `positive`, `negative`, or `neutral`, then generates a Buy / Hold / Sell recommendation with confidence, score, reasoning, and factors.
+Generates a structured summary and sentiment analysis from one OpenAI call, then applies local deterministic logic for the Buy / Hold / Sell recommendation.
 
 ## Evaluation Workflow
 

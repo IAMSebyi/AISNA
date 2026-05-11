@@ -32,10 +32,6 @@ function formatAnalysisError(detail, status) {
   return detail || `Request failed with status ${status}`;
 }
 
-export function summarizeNews(payload) {
-  return postJson('/news-summary', payload);
-}
-
-export function analyzeNewsSentiment(payload) {
-  return postJson('/news-sentiment', payload);
+export function analyzeNewsReport(payload) {
+  return postJson('/news-report', payload);
 }
