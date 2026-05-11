@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { analyzeNewsSentiment, summarizeNews } from '../services/analysisApi';
+import { fetchStockNews } from '../services/stocksApi';
 
 const initialArticles = [
   {
@@ -49,6 +50,7 @@ export default function Analysis() {
   const [summary, setSummary] = useState(null);
   const [sentiment, setSentiment] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNews, setIsFetchingNews] = useState(false);
   const [error, setError] = useState('');
 
   const canSubmit = useMemo(() => {
@@ -77,6 +79,34 @@ export default function Analysis() {
     setSummary(null);
     setSentiment(null);
     setError('');
+  };
+
+  const handleFetchNews = async () => {
+    if (!symbol.trim()) return;
+    setIsFetchingNews(true);
+    setError('');
+    setSummary(null);
+    setSentiment(null);
+
+    try {
+      const fetchedArticles = await fetchStockNews(symbol.trim().toUpperCase());
+      if (fetchedArticles.length === 0) {
+        setError('No news articles found for this ticker.');
+      } else {
+        setArticles(fetchedArticles.map(article => ({
+          title: article.title || '',
+          source: article.source || '',
+          url: article.url || '',
+          published_at: article.published_at || '',
+          description: article.description || '',
+          content: article.content || '',
+        })));
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to fetch news.');
+    } finally {
+      setIsFetchingNews(false);
+    }
   };
 
   const runAnalysis = async (event) => {
@@ -141,14 +171,25 @@ export default function Analysis() {
                 <h2 className="font-headline-md text-headline-md text-on-surface">Input</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">Ticker and article context sent to both agents.</p>
               </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
-                type="button"
-                onClick={resetSample}
-              >
-                <span className="material-symbols-outlined text-base">restart_alt</span>
-                Sample
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
+                  type="button"
+                  onClick={resetSample}
+                >
+                  <span className="material-symbols-outlined text-base">restart_alt</span>
+                  Sample
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-primary hover:text-primary-fixed hover:border-primary transition-colors font-label-sm text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleFetchNews}
+                  disabled={isFetchingNews || !symbol.trim()}
+                >
+                  <span className={`material-symbols-outlined text-base ${isFetchingNews ? 'animate-spin' : ''}`}>{isFetchingNews ? 'sync' : 'download'}</span>
+                  {isFetchingNews ? 'Fetching...' : 'Fetch News'}
+                </button>
+              </div>
             </div>
 
             <label className="flex flex-col gap-2">

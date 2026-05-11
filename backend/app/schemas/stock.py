@@ -4,11 +4,14 @@ from datetime import datetime
 
 class NewsArticle(BaseModel):
     source: str
-    time: str
+    time: Optional[str] = None
     title: str
-    sentiment: str
-    category: str
+    sentiment: Optional[str] = None
+    category: Optional[str] = None
     url: Optional[str] = None
+    published_at: Optional[str] = None
+    description: Optional[str] = None
+    content: Optional[str] = None
 
 class StockQuote(BaseModel):
     symbol: str
@@ -23,6 +26,8 @@ class StockQuote(BaseModel):
 class MarketSnapshot(BaseModel):
     symbol: str
     price: float
+    change: float
+    change_percent: float
     volume: int
     high: float
     low: float
