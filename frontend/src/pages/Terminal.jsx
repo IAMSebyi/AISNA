@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 export default function Terminal() {
   const [status, setStatus] = useState(null);
-  const [messages, setMessages] = useState([
+  const [messages] = useState([
     { time: '10:42:01', source: 'System', text: 'Cluster initialization complete. All nodes responsive.', type: 'info' },
     { time: '10:42:15', source: 'Data Node', text: 'Establishing websocket connection to prime brokers... SUCCESS.', type: 'success' },
     { time: '10:45:30', source: 'Input', text: 'User requested deep scan for ticker: AAPL', type: 'bold' },
@@ -24,7 +24,9 @@ export default function Terminal() {
       <div className="max-w-7xl mx-auto mb-lg flex flex-col md:flex-row gap-md items-start md:items-center justify-between">
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Live Agent Terminal</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">Real-time processing cluster operational.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Real-time processing cluster operational{status ? ` - ${status.length} backend nodes` : ''}.
+          </p>
         </div>
         <div className="w-full md:w-96 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
