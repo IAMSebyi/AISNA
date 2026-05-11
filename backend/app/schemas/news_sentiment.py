@@ -2,6 +2,8 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.recommendation import RecommendationResult
+
 
 SentimentLabel = Literal["positive", "negative", "neutral"]
 
@@ -42,3 +44,7 @@ class NewsSentimentResult(BaseModel):
     neutral_count: int = Field(..., ge=0)
     key_drivers: List[str]
     article_sentiments: List[ArticleSentiment]
+
+
+class NewsSentimentRecommendationResult(NewsSentimentResult):
+    recommendation: RecommendationResult
