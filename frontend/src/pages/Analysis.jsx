@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { analyzeNewsSentiment, summarizeNews } from '../services/analysisApi';
-import { fetchStockNews } from '../services/stocksApi';
+import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
 
 const initialArticles = [
   {
@@ -45,17 +46,23 @@ function emptyArticle() {
 }
 
 export default function Analysis() {
-  const [symbol, setSymbol] = useState('AAPL');
+  const [searchParams] = useSearchParams();
+  const initialSymbol = normalizeStockSymbol(searchParams.get('symbol') || 'AAPL');
+  const [symbol, setSymbol] = useState(initialSymbol);
   const [articles, setArticles] = useState(initialArticles);
   const [summary, setSummary] = useState(null);
   const [sentiment, setSentiment] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingNews, setIsFetchingNews] = useState(false);
   const [error, setError] = useState('');
+  const [lastFetchedSymbol, setLastFetchedSymbol] = useState('');
+
+  const normalizedSymbol = normalizeStockSymbol(symbol);
+  const symbolIsValid = isValidStockSymbol(symbol);
 
   const canSubmit = useMemo(() => {
-    return symbol.trim() && articles.some((article) => article.title.trim());
-  }, [articles, symbol]);
+    return symbolIsValid && articles.some((article) => article.title.trim());
+  }, [articles, symbolIsValid]);
 
   const updateArticle = (index, field, value) => {
     setArticles((current) =>
@@ -79,17 +86,22 @@ export default function Analysis() {
     setSummary(null);
     setSentiment(null);
     setError('');
+    setLastFetchedSymbol('');
   };
 
   const handleFetchNews = async () => {
-    if (!symbol.trim()) return;
+    if (!symbolIsValid) {
+      setError('Enter a valid ticker using letters, numbers, dots, or hyphens.');
+      return;
+    }
+
     setIsFetchingNews(true);
     setError('');
     setSummary(null);
     setSentiment(null);
 
     try {
-      const fetchedArticles = await fetchStockNews(symbol.trim().toUpperCase());
+      const fetchedArticles = await fetchStockNews(normalizedSymbol, 5);
       if (fetchedArticles.length === 0) {
         setError('No news articles found for this ticker.');
       } else {
@@ -101,6 +113,7 @@ export default function Analysis() {
           description: article.description || '',
           content: article.content || '',
         })));
+        setLastFetchedSymbol(normalizedSymbol);
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch news.');
@@ -117,7 +130,7 @@ export default function Analysis() {
     setSentiment(null);
 
     const payload = {
-      symbol: symbol.trim().toUpperCase(),
+      symbol: normalizedSymbol,
       articles: articles
         .filter((article) => article.title.trim())
         .map((article) => ({
@@ -169,7 +182,7 @@ export default function Analysis() {
             <div className="flex items-center justify-between gap-md">
               <div>
                 <h2 className="font-headline-md text-headline-md text-on-surface">Input</h2>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-1">Ticker and article context sent to both agents.</p>
+                <p className="font-body-md text-body-md text-on-surface-variant mt-1">Search a ticker, fetch news, then send the article context to the agents.</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -184,10 +197,10 @@ export default function Analysis() {
                   className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-primary hover:text-primary-fixed hover:border-primary transition-colors font-label-sm text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   type="button"
                   onClick={handleFetchNews}
-                  disabled={isFetchingNews || !symbol.trim()}
+                  disabled={isFetchingNews || !symbolIsValid}
                 >
-                  <span className={`material-symbols-outlined text-base ${isFetchingNews ? 'animate-spin' : ''}`}>{isFetchingNews ? 'sync' : 'download'}</span>
-                  {isFetchingNews ? 'Fetching...' : 'Fetch News'}
+                  <span className={`material-symbols-outlined text-base ${isFetchingNews ? 'animate-spin' : ''}`}>{isFetchingNews ? 'sync' : 'search'}</span>
+                  {isFetchingNews ? 'Searching...' : 'Search Ticker'}
                 </button>
               </div>
             </div>
@@ -195,12 +208,16 @@ export default function Analysis() {
             <label className="flex flex-col gap-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Ticker</span>
               <input
-                className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary"
+                className={`w-full rounded-lg border bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary ${symbol && !symbolIsValid ? 'border-error/70' : 'border-outline-variant/40'}`}
                 maxLength={12}
                 value={symbol}
-                onChange={(event) => setSymbol(event.target.value)}
+                onChange={(event) => setSymbol(normalizeStockSymbol(event.target.value))}
                 placeholder="AAPL"
               />
+              <div className="flex items-center justify-between gap-3 font-data-mono text-[11px] text-on-surface-variant">
+                <span>{symbol && !symbolIsValid ? 'Use 1-12 letters, numbers, dots, or hyphens.' : 'Examples: AAPL, MSFT, BRK.B'}</span>
+                {lastFetchedSymbol && <span>Loaded: {lastFetchedSymbol}</span>}
+              </div>
             </label>
           </div>
 

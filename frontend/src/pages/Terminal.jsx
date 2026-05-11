@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
 
 export default function Terminal() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
+  const [searchSymbol, setSearchSymbol] = useState('');
+  const [searchError, setSearchError] = useState('');
   const [messages] = useState([
     { time: '10:42:01', source: 'System', text: 'Cluster initialization complete. All nodes responsive.', type: 'info' },
     { time: '10:42:15', source: 'Data Node', text: 'Establishing websocket connection to prime brokers... SUCCESS.', type: 'success' },
@@ -19,6 +24,18 @@ export default function Terminal() {
       .catch(err => console.error("Backend not running yet:", err));
   }, []);
 
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const normalizedSymbol = normalizeStockSymbol(searchSymbol);
+
+    if (!isValidStockSymbol(normalizedSymbol)) {
+      setSearchError('Enter a valid ticker.');
+      return;
+    }
+
+    navigate(`/analysis?symbol=${encodeURIComponent(normalizedSymbol)}`);
+  };
+
   return (
     <>
       <div className="max-w-7xl mx-auto mb-lg flex flex-col md:flex-row gap-md items-start md:items-center justify-between">
@@ -28,15 +45,33 @@ export default function Terminal() {
             Real-time processing cluster operational{status ? ` - ${status.length} backend nodes` : ''}.
           </p>
         </div>
-        <div className="w-full md:w-96 relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="material-symbols-outlined text-outline">search</span>
+        <form className="w-full md:w-96 flex flex-col gap-2" onSubmit={handleSearch}>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="material-symbols-outlined text-outline">search</span>
+            </div>
+            <input
+              autoFocus
+              className={`block w-full pl-10 pr-12 py-3 border rounded-lg leading-5 bg-surface-container-highest text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-data-mono text-data-mono transition-colors ${searchError ? 'border-error/70' : 'border-outline/30'}`}
+              maxLength={12}
+              onChange={(event) => {
+                setSearchSymbol(normalizeStockSymbol(event.target.value));
+                setSearchError('');
+              }}
+              placeholder="ENTER TICKER (e.g. MSFT, AAPL)..."
+              type="text"
+              value={searchSymbol}
+            />
+            <button
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-primary"
+              type="submit"
+              aria-label="Search ticker"
+            >
+              <span className="font-label-sm text-label-sm bg-surface-container-low px-2 py-1 rounded">↵</span>
+            </button>
           </div>
-          <input autoFocus className="block w-full pl-10 pr-3 py-3 border-outline/30 rounded-lg leading-5 bg-surface-container-highest text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-data-mono text-data-mono transition-colors" placeholder="ENTER TICKER (e.g. MSFT, AAPL)..." type="text"/>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <span className="font-label-sm text-label-sm text-outline-variant bg-surface-container-low px-2 py-1 rounded">↵</span>
-          </div>
-        </div>
+          {searchError && <span className="font-label-sm text-label-sm text-error">{searchError}</span>}
+        </form>
       </div>
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-gutter">
         <div className="lg:col-span-4 flex flex-col gap-md">
