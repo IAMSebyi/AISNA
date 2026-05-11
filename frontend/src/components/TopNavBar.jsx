@@ -11,8 +11,7 @@ export default function TopNavBar() {
           <span className="md:hidden font-display-lg text-display-lg font-bold text-primary">EquiSynth AI</span>
           <nav className="hidden md:flex items-center gap-6">
             <Link className={`font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md ${isActive('/') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-on-surface-variant'}`} to="/">Dashboard</Link>
-            <Link className={`font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md ${isActive('/portfolio') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-on-surface-variant'}`} to="/portfolio">Saved Tickers</Link>
-            <Link className={`font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md ${isActive('/portfolio') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-on-surface-variant'}`} to="/portfolio">Portfolio</Link>
+            <Link className={`font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md ${isActive('/portfolio') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-on-surface-variant'}`} to="/portfolio">Favorite Tickers</Link>
             <Link className={`font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md ${isActive('/analysis') ? 'text-primary font-bold border-b-2 border-primary pb-1' : 'text-on-surface-variant'}`} to="/analysis">Analysis</Link>
           </nav>
         </div>

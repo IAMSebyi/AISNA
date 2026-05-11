@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { analyzeNewsSentiment, summarizeNews } from '../services/analysisApi';
+import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesStorage';
 import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
 
 const initialArticles = [
@@ -59,9 +60,11 @@ export default function Analysis() {
   const [lastFetchedSymbol, setLastFetchedSymbol] = useState('');
   const [newsArticles, setNewsArticles] = useState([]);
   const [showArticleEditor, setShowArticleEditor] = useState(false);
+  const [, setFavoriteTickersVersion] = useState(0);
 
   const normalizedSymbol = normalizeStockSymbol(symbol);
   const symbolIsValid = isValidStockSymbol(symbol);
+  const isCurrentTickerFavorite = symbolIsValid && isFavoriteTicker(normalizedSymbol);
 
   const canSubmit = useMemo(() => {
     return symbolIsValid && articles.some((article) => article.title.trim());
@@ -133,6 +136,18 @@ export default function Analysis() {
     } finally {
       setIsFetchingNews(false);
     }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!symbolIsValid) {
+      setError('Enter a valid ticker before saving it as a favorite.');
+      return;
+    }
+
+    const isSaved = toggleFavoriteTicker(normalizedSymbol);
+    setFavoriteTickersVersion((current) => current + 1);
+    setNewsNotice(isSaved ? `${normalizedSymbol} was added to favorite tickers.` : `${normalizedSymbol} was removed from favorite tickers.`);
+    setError('');
   };
 
   const runAnalysis = async (event) => {
@@ -221,13 +236,25 @@ export default function Analysis() {
 
             <label className="flex flex-col gap-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Ticker</span>
-              <input
-                className={`w-full rounded-lg border bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary ${symbol && !symbolIsValid ? 'border-error/70' : 'border-outline-variant/40'}`}
-                maxLength={12}
-                value={symbol}
-                onChange={(event) => setSymbol(normalizeStockSymbol(event.target.value))}
-                placeholder="AAPL"
-              />
+              <div className="flex gap-2">
+                <input
+                  className={`min-w-0 flex-1 rounded-lg border bg-surface-container-highest px-4 py-3 font-data-mono text-data-mono text-on-surface outline-none focus:border-primary ${symbol && !symbolIsValid ? 'border-error/70' : 'border-outline-variant/40'}`}
+                  maxLength={12}
+                  value={symbol}
+                  onChange={(event) => setSymbol(normalizeStockSymbol(event.target.value))}
+                  placeholder="AAPL"
+                />
+                <button
+                  className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isCurrentTickerFavorite ? 'border-primary/50 bg-primary/10 text-primary' : 'border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:border-primary'}`}
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  disabled={!symbolIsValid}
+                  aria-label={isCurrentTickerFavorite ? `Remove ${normalizedSymbol} from favorite tickers` : `Save ${normalizedSymbol} as favorite ticker`}
+                  title={isCurrentTickerFavorite ? 'Remove from favorites' : 'Save as favorite'}
+                >
+                  <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: isCurrentTickerFavorite ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+                </button>
+              </div>
               <div className="flex items-center justify-between gap-3 font-data-mono text-[11px] text-on-surface-variant">
                 <span>{symbol && !symbolIsValid ? 'Use 1-12 letters, numbers, dots, or hyphens.' : 'Examples: AAPL, MSFT, BRK.B'}</span>
                 {lastFetchedSymbol && <span>Loaded: {lastFetchedSymbol}</span>}

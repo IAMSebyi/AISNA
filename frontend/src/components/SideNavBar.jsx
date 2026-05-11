@@ -24,6 +24,10 @@ export default function SideNavBar() {
           <span className="material-symbols-outlined">terminal</span>
           Logic Engine
         </Link>
+        <Link className="text-on-surface-variant hover:bg-surface-variant/30 mx-2 px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-surface-variant/50 transition-all font-label-sm text-label-sm" to="/portfolio">
+          <span className="material-symbols-outlined">star</span>
+          Favorite Tickers
+        </Link>
       </div>
       <div className="mt-auto px-4 mb-md">
         <button className="w-full bg-primary text-on-primary font-label-sm text-label-sm py-3 rounded-lg hover:bg-primary-fixed transition-colors">Upgrade Analysis</button>
