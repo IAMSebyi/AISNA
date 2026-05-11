@@ -6,4 +6,4 @@ python-dotenv
 httpx
 openai
 pytest
-
+yfinance

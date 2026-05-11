@@ -1,15 +1,22 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
-import random
-from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot
-import yfinance as yf
-import httpx
-from app.core.config import settings
+from datetime import datetime
 import logging
+import random
+import re
+from typing import List
+
+from fastapi import APIRouter, HTTPException, Query
+import httpx
+import yfinance as yf
+
+from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+ALPHA_VANTAGE_NEWS_URL = "https://www.alphavantage.co/query"
+SYMBOL_PATTERN = re.compile(r"^[A-Z0-9.-]{1,12}$")
 
 @router.get("/market/snapshot", response_model=List[MarketSnapshot])
 def get_market_snapshot(symbols: str = "AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA"):
@@ -62,64 +69,78 @@ def get_stock_quote(symbol: str):
     }
 
 @router.get("/{symbol}/news", response_model=List[NewsArticle])
-async def get_stock_news(symbol: str):
-    symbol = symbol.upper()
-    api_key = settings.ALPHA_VANTAGE_API_KEY
-    url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers={symbol}&apikey={api_key}"
-    
+async def get_stock_news(symbol: str, limit: int = Query(default=5, ge=1, le=20)):
+    symbol = _normalize_symbol(symbol)
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url, timeout=10.0)
+            response = await client.get(
+                ALPHA_VANTAGE_NEWS_URL,
+                params={
+                    "function": "NEWS_SENTIMENT",
+                    "tickers": symbol,
+                    "apikey": settings.ALPHA_VANTAGE_API_KEY,
+                },
+                timeout=10.0,
+            )
             response.raise_for_status()
             data = response.json()
-            
-        feed = data.get("feed", [])
-        
-        if not feed:
-            # Fallback for mock data if API limits or demo key restrictions occur
-            return [
-                {
-                    "source": "Bloomberg",
-                    "time": "10m ago",
-                    "title": f"{symbol} Announces Surprise Early Event Amidst Strong Q3 Projections",
-                    "sentiment": "Positive",
-                    "category": "Hardware",
-                    "published_at": "2026-05-11",
-                    "description": f"Mock data for {symbol} due to API limitations.",
-                    "content": f"Mock data for {symbol} due to API limitations."
-                },
-                {
-                    "source": "Reuters",
-                    "time": "45m ago",
-                    "title": "Supply Chain Partners Report Increased Component Orders for Q4",
-                    "sentiment": "Positive",
-                    "category": "Supply",
-                    "published_at": "2026-05-11",
-                    "description": "More mock data fallback.",
-                    "content": "More mock data fallback."
-                }
-            ]
-            
-        articles = []
-        for item in feed[:5]:
-            time_pub = item.get("time_published", "")
-            if time_pub and len(time_pub) == 15: # format: YYYYMMDDTHHMMSS
-                formatted_time = f"{time_pub[:4]}-{time_pub[4:6]}-{time_pub[6:8]}"
-            else:
-                formatted_time = time_pub
 
-            articles.append({
-                "title": item.get("title", ""),
-                "source": item.get("source", ""),
-                "url": item.get("url", ""),
-                "published_at": formatted_time,
-                "description": item.get("summary", ""),
-                "content": item.get("summary", ""),
-                "time": time_pub,
-                "sentiment": item.get("overall_sentiment_label", ""),
-                "category": item.get("category_within_source", "")
-            })
-        return articles
-    except Exception as e:
-        logger.error(f"Error fetching news for {symbol}: {e}")
+        feed = data.get("feed") or []
+        if not feed:
+            logger.warning("Alpha Vantage returned no feed for %s: %s", symbol, data)
+            return _fallback_news(symbol)[:limit]
+
+        return [_map_alpha_vantage_article(item) for item in feed[:limit]]
+    except httpx.HTTPError as e:
+        logger.error("Error fetching news for %s: %s", symbol, e)
         raise HTTPException(status_code=500, detail="Failed to fetch stock news")
+
+
+def _normalize_symbol(symbol: str) -> str:
+    normalized_symbol = symbol.strip().upper()
+    if not SYMBOL_PATTERN.fullmatch(normalized_symbol):
+        raise HTTPException(
+            status_code=400,
+            detail="Ticker symbol must be 1-12 characters and contain only letters, numbers, dots, or hyphens.",
+        )
+    return normalized_symbol
+
+
+def _map_alpha_vantage_article(item: dict) -> dict:
+    time_published = item.get("time_published", "")
+    summary = item.get("summary", "")
+
+    return {
+        "title": item.get("title", ""),
+        "source": item.get("source", ""),
+        "url": item.get("url", ""),
+        "published_at": _format_alpha_vantage_date(time_published),
+        "description": summary,
+        "content": summary,
+        "time": time_published,
+        "sentiment": item.get("overall_sentiment_label", ""),
+        "category": item.get("category_within_source", ""),
+    }
+
+
+def _format_alpha_vantage_date(time_published: str) -> str:
+    try:
+        return datetime.strptime(time_published, "%Y%m%dT%H%M%S").date().isoformat()
+    except (TypeError, ValueError):
+        return time_published or ""
+
+
+def _fallback_news(symbol: str) -> list[dict]:
+    return [
+        {
+            "source": "Alpha Vantage Fallback",
+            "time": "",
+            "title": f"{symbol} news temporarily unavailable",
+            "sentiment": "Neutral",
+            "category": "Fallback",
+            "published_at": "",
+            "description": "No external news feed was returned for this ticker.",
+            "content": "No external news feed was returned for this ticker.",
+        }
+    ]
