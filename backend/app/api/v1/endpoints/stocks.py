@@ -94,7 +94,10 @@ async def get_stock_news(symbol: str, limit: int = Query(default=5, ge=1, le=20)
         return [_map_alpha_vantage_article(item) for item in feed[:limit]]
     except httpx.HTTPError as e:
         logger.error("Error fetching news for %s: %s", symbol, e)
-        raise HTTPException(status_code=500, detail="Failed to fetch stock news")
+        raise HTTPException(
+            status_code=502,
+            detail="Stock news provider is currently unavailable. Please try again later.",
+        )
 
 
 def _normalize_symbol(symbol: str) -> str:

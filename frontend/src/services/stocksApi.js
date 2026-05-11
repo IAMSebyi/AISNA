@@ -11,7 +11,14 @@ export function isValidStockSymbol(symbol) {
 
 export async function fetchStockNews(symbol, limit = 5) {
   const normalizedSymbol = normalizeStockSymbol(symbol);
-  const response = await fetch(`${API_BASE}/${normalizedSymbol}/news?limit=${limit}`);
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE}/${normalizedSymbol}/news?limit=${limit}`);
+  } catch {
+    throw new Error('Backend is unavailable. Start the FastAPI server and try again.');
+  }
+
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => null);
     const detail = errorPayload?.detail || `Request failed with status ${response.status}`;

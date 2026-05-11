@@ -55,6 +55,7 @@ export default function Analysis() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingNews, setIsFetchingNews] = useState(false);
   const [error, setError] = useState('');
+  const [newsNotice, setNewsNotice] = useState('');
   const [lastFetchedSymbol, setLastFetchedSymbol] = useState('');
   const [newsArticles, setNewsArticles] = useState([]);
   const [showArticleEditor, setShowArticleEditor] = useState(false);
@@ -88,6 +89,7 @@ export default function Analysis() {
     setSummary(null);
     setSentiment(null);
     setError('');
+    setNewsNotice('');
     setLastFetchedSymbol('');
     setNewsArticles([]);
     setShowArticleEditor(false);
@@ -101,16 +103,20 @@ export default function Analysis() {
 
     setIsFetchingNews(true);
     setError('');
+    setNewsNotice('');
     setSummary(null);
     setSentiment(null);
 
     try {
       const fetchedArticles = await fetchStockNews(normalizedSymbol, 5);
       if (fetchedArticles.length === 0) {
-        setError('No news articles found for this ticker.');
+        setNewsNotice('No news articles were found for this ticker.');
         setNewsArticles([]);
       } else {
         setNewsArticles(fetchedArticles);
+        if (fetchedArticles.some((article) => article.source === 'Alpha Vantage Fallback')) {
+          setNewsNotice('The news provider did not return live articles, so a fallback item is shown.');
+        }
         setShowArticleEditor(false);
         setArticles(fetchedArticles.map(article => ({
           title: article.title || '',
@@ -133,6 +139,7 @@ export default function Analysis() {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setNewsNotice('');
     setSummary(null);
     setSentiment(null);
 
@@ -322,11 +329,8 @@ export default function Analysis() {
             </button>
           </div>
 
-          {error && (
-            <div className="rounded-lg border border-error/40 bg-error-container/20 p-md text-error font-body-md text-body-md">
-              {error}
-            </div>
-          )}
+          {newsNotice && <AlertMessage tone="warning" message={newsNotice} />}
+          {error && <AlertMessage tone="error" message={error} />}
         </section>
 
         <section className="xl:col-span-7 flex flex-col gap-md">
@@ -337,6 +341,19 @@ export default function Analysis() {
           <SentimentPanel sentiment={sentiment} />
         </section>
       </form>
+    </div>
+  );
+}
+
+function AlertMessage({ message, tone }) {
+  const isError = tone === 'error';
+
+  return (
+    <div className={`rounded-lg border p-md font-body-md text-body-md ${isError ? 'border-error/40 bg-error-container/20 text-error' : 'border-tertiary/40 bg-tertiary-container/10 text-tertiary-fixed'}`}>
+      <div className="flex items-start gap-2">
+        <span className="material-symbols-outlined text-base mt-1">{isError ? 'error' : 'info'}</span>
+        <span>{message}</span>
+      </div>
     </div>
   );
 }

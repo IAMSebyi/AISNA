@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import httpx
 
 from app.api.v1.endpoints import stocks
 from app.main import app
@@ -38,6 +39,17 @@ class FakeAsyncClient:
             }
         )
         return FakeResponse(self.payload)
+
+
+class FailingAsyncClient:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, traceback):
+        return None
+
+    async def get(self, url: str, *, params: dict, timeout: float):
+        raise httpx.ConnectError("provider unavailable")
 
 
 def install_fake_alpha_vantage(monkeypatch, payload: dict) -> dict:
@@ -110,3 +122,14 @@ def test_stock_news_rejects_invalid_symbol():
 
     assert response.status_code == 400
     assert "Ticker symbol" in response.json()["detail"]
+
+
+def test_stock_news_returns_provider_error_when_external_api_fails(monkeypatch):
+    monkeypatch.setattr(stocks.httpx, "AsyncClient", FailingAsyncClient)
+
+    response = client.get("/api/v1/stocks/AAPL/news")
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Stock news provider is currently unavailable. Please try again later."
+    )
