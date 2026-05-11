@@ -29,6 +29,28 @@ jobs:
         working-directory: backend
         run: pytest tests/api -v
 
+  backend-evaluation:
+    name: Backend Evaluation Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run evaluation tests
+        working-directory: backend
+        run: pytest tests/evaluation -v
+
   backend-lint:
     name: Backend Lint
     runs-on: ubuntu-latest
