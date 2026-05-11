@@ -1,0 +1,319 @@
+[
+  {
+    "id": "aapl-positive-demand",
+    "articles": [
+      {
+        "title": "Apple reports stronger iPhone demand",
+        "source": "Reuters",
+        "url": "https://example.com/apple-demand",
+        "published_at": "2026-05-11",
+        "description": "Apple demand appears stronger than expected.",
+        "content": "Analysts reported increased demand for recent iPhone models and resilient services revenue."
+      },
+      {
+        "title": "Apple services revenue grows despite hardware concerns",
+        "source": "Bloomberg",
+        "url": "https://example.com/apple-services",
+        "published_at": "2026-05-11",
+        "description": "Services revenue remains a bright spot.",
+        "content": "Apple's services segment continued to grow, helping offset concerns about slower hardware upgrade cycles."
+      }
+    ],
+    "summary_output": {
+      "symbol": "AAPL",
+      "short_summary": "Apple is seeing stronger iPhone demand and continued services revenue growth.",
+      "detailed_summary": "The articles point to improved demand for recent iPhone models and resilient services revenue. Services growth appears to help offset concerns about slower hardware upgrade cycles.",
+      "key_points": [
+        "Analysts reported stronger demand for recent iPhone models.",
+        "Services revenue remains resilient.",
+        "Services growth may offset slower hardware upgrade cycles."
+      ],
+      "risks": [
+        "The articles do not provide detailed financial metrics.",
+        "Slower hardware upgrade cycles remain a concern."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Apple reports stronger iPhone demand",
+          "url": "https://example.com/apple-demand"
+        },
+        {
+          "article_index": 2,
+          "title": "Apple services revenue grows despite hardware concerns",
+          "url": "https://example.com/apple-services"
+        }
+      ]
+    },
+    "summary_expectations": {
+      "id": "aapl-positive-demand-summary",
+      "required_keywords": ["iPhone", "services", "demand"],
+      "forbidden_keywords": ["bankruptcy", "fraud"],
+      "min_key_points": 2,
+      "min_citations": 2,
+      "max_short_summary_words": 30
+    },
+    "sentiment_output": {
+      "symbol": "AAPL",
+      "overall_sentiment": "positive",
+      "confidence": 0.82,
+      "source_count": 2,
+      "positive_count": 2,
+      "negative_count": 0,
+      "neutral_count": 0,
+      "key_drivers": [
+        "Stronger iPhone demand",
+        "Resilient services revenue"
+      ],
+      "article_sentiments": [
+        {
+          "article_index": 1,
+          "title": "Apple reports stronger iPhone demand",
+          "sentiment": "positive",
+          "confidence": 0.84,
+          "reason": "The article describes stronger demand and resilient revenue."
+        },
+        {
+          "article_index": 2,
+          "title": "Apple services revenue grows despite hardware concerns",
+          "sentiment": "positive",
+          "confidence": 0.78,
+          "reason": "The article emphasizes services growth despite a risk."
+        }
+      ],
+      "recommendation": {
+        "action": "Buy",
+        "confidence": 0.859,
+        "score": 0.928,
+        "reasoning": "Positive news evidence is strong enough to support a Buy recommendation.",
+        "factors": [
+          "Overall news sentiment is positive.",
+          "Article split: 2 positive, 0 neutral, 0 negative."
+        ]
+      }
+    },
+    "sentiment_expectations": {
+      "id": "aapl-positive-demand-sentiment",
+      "expected_sentiment": "positive",
+      "min_confidence": 0.7,
+      "expected_article_sentiments": ["positive", "positive"]
+    },
+    "recommendation_expectations": {
+      "id": "aapl-positive-demand-recommendation",
+      "expected_action": "Buy",
+      "min_confidence": 0.5
+    }
+  },
+  {
+    "id": "tsla-negative-deliveries",
+    "articles": [
+      {
+        "title": "Tesla shares fall after weak deliveries",
+        "source": "CNBC",
+        "url": "https://example.com/tesla-deliveries",
+        "published_at": "2026-05-11",
+        "description": "Tesla delivery numbers missed analyst expectations.",
+        "content": "Tesla shares fell after quarterly deliveries came in below analyst expectations."
+      },
+      {
+        "title": "Analysts warn margin pressure could continue",
+        "source": "MarketWatch",
+        "url": "https://example.com/tesla-margins",
+        "published_at": "2026-05-11",
+        "description": "Analysts warn that price cuts may keep margins under pressure.",
+        "content": "Several analysts warned that continued price cuts could keep Tesla margins under pressure."
+      }
+    ],
+    "summary_output": {
+      "symbol": "TSLA",
+      "short_summary": "Tesla faces negative news around weak deliveries and margin pressure.",
+      "detailed_summary": "The articles describe weaker-than-expected deliveries and analyst concerns that price cuts may continue to pressure Tesla's margins.",
+      "key_points": [
+        "Quarterly deliveries missed analyst expectations.",
+        "Shares fell after the delivery report.",
+        "Price cuts may continue pressuring margins."
+      ],
+      "risks": [
+        "Delivery weakness may signal softer demand.",
+        "Margin pressure could affect profitability."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Tesla shares fall after weak deliveries",
+          "url": "https://example.com/tesla-deliveries"
+        },
+        {
+          "article_index": 2,
+          "title": "Analysts warn margin pressure could continue",
+          "url": "https://example.com/tesla-margins"
+        }
+      ]
+    },
+    "summary_expectations": {
+      "id": "tsla-negative-deliveries-summary",
+      "required_keywords": ["deliveries", "margin", "pressure"],
+      "forbidden_keywords": ["record profit"],
+      "min_key_points": 2,
+      "min_citations": 2,
+      "max_short_summary_words": 30
+    },
+    "sentiment_output": {
+      "symbol": "TSLA",
+      "overall_sentiment": "negative",
+      "confidence": 0.86,
+      "source_count": 2,
+      "positive_count": 0,
+      "negative_count": 2,
+      "neutral_count": 0,
+      "key_drivers": [
+        "Weak deliveries",
+        "Margin pressure"
+      ],
+      "article_sentiments": [
+        {
+          "article_index": 1,
+          "title": "Tesla shares fall after weak deliveries",
+          "sentiment": "negative",
+          "confidence": 0.88,
+          "reason": "The article reports shares falling after weak deliveries."
+        },
+        {
+          "article_index": 2,
+          "title": "Analysts warn margin pressure could continue",
+          "sentiment": "negative",
+          "confidence": 0.84,
+          "reason": "The article warns that margins may remain under pressure."
+        }
+      ],
+      "recommendation": {
+        "action": "Sell",
+        "confidence": 0.866,
+        "score": -0.944,
+        "reasoning": "Negative news evidence is strong enough to support a Sell recommendation.",
+        "factors": [
+          "Overall news sentiment is negative.",
+          "Article split: 0 positive, 0 neutral, 2 negative."
+        ]
+      }
+    },
+    "sentiment_expectations": {
+      "id": "tsla-negative-deliveries-sentiment",
+      "expected_sentiment": "negative",
+      "min_confidence": 0.75,
+      "expected_article_sentiments": ["negative", "negative"]
+    },
+    "recommendation_expectations": {
+      "id": "tsla-negative-deliveries-recommendation",
+      "expected_action": "Sell",
+      "min_confidence": 0.5
+    }
+  },
+  {
+    "id": "msft-mixed-cloud",
+    "articles": [
+      {
+        "title": "Microsoft cloud growth remains solid",
+        "source": "Reuters",
+        "url": "https://example.com/msft-cloud",
+        "published_at": "2026-05-11",
+        "description": "Microsoft cloud revenue continued to grow.",
+        "content": "Microsoft reported continued cloud growth, but management noted cautious enterprise spending."
+      },
+      {
+        "title": "Enterprise software spending remains cautious",
+        "source": "Bloomberg",
+        "url": "https://example.com/msft-spending",
+        "published_at": "2026-05-11",
+        "description": "Enterprise customers remain selective on software spend.",
+        "content": "Enterprise customers remain selective on software spending, creating a mixed outlook for Microsoft."
+      }
+    ],
+    "summary_output": {
+      "symbol": "MSFT",
+      "short_summary": "Microsoft has solid cloud growth, but cautious enterprise spending creates a mixed outlook.",
+      "detailed_summary": "The articles show continued cloud growth for Microsoft while also pointing to cautious enterprise software spending. The overall picture is balanced rather than clearly positive or negative.",
+      "key_points": [
+        "Cloud revenue continued to grow.",
+        "Enterprise customers remain cautious on spending.",
+        "The outlook is mixed."
+      ],
+      "risks": [
+        "Cautious enterprise spending could limit future growth."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Microsoft cloud growth remains solid",
+          "url": "https://example.com/msft-cloud"
+        },
+        {
+          "article_index": 2,
+          "title": "Enterprise software spending remains cautious",
+          "url": "https://example.com/msft-spending"
+        }
+      ]
+    },
+    "summary_expectations": {
+      "id": "msft-mixed-cloud-summary",
+      "required_keywords": ["cloud", "enterprise", "mixed"],
+      "forbidden_keywords": ["collapse"],
+      "min_key_points": 2,
+      "min_citations": 2,
+      "max_short_summary_words": 30
+    },
+    "sentiment_output": {
+      "symbol": "MSFT",
+      "overall_sentiment": "neutral",
+      "confidence": 0.74,
+      "source_count": 2,
+      "positive_count": 1,
+      "negative_count": 0,
+      "neutral_count": 1,
+      "key_drivers": [
+        "Cloud growth is positive",
+        "Enterprise spending is cautious"
+      ],
+      "article_sentiments": [
+        {
+          "article_index": 1,
+          "title": "Microsoft cloud growth remains solid",
+          "sentiment": "positive",
+          "confidence": 0.7,
+          "reason": "Cloud revenue growth is positive, though spending caution limits strength."
+        },
+        {
+          "article_index": 2,
+          "title": "Enterprise software spending remains cautious",
+          "sentiment": "neutral",
+          "confidence": 0.72,
+          "reason": "The article describes a balanced or mixed outlook."
+        }
+      ],
+      "recommendation": {
+        "action": "Hold",
+        "confidence": 0.436,
+        "score": 0.3,
+        "reasoning": "The evidence is mixed, weak, or not confident enough, so Hold is preferred.",
+        "factors": [
+          "Overall news sentiment is neutral.",
+          "Article split: 1 positive, 1 neutral, 0 negative."
+        ]
+      }
+    },
+    "sentiment_expectations": {
+      "id": "msft-mixed-cloud-sentiment",
+      "expected_sentiment": "neutral",
+      "min_confidence": 0.6,
+      "expected_article_sentiments": ["positive", "neutral"]
+    },
+    "recommendation_expectations": {
+      "id": "msft-mixed-cloud-recommendation",
+      "expected_action": "Hold",
+      "min_confidence": 0.3
+    }
+  }
+]
