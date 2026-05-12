@@ -87,6 +87,35 @@ Evaluation files:
 - `backend/tests/evaluation/fixtures/agent_evaluation_cases.json`
 - `backend/tests/evaluation/test_agent_evaluation.py`
 
+## Tests
+
+The backend has two test suites located in [`backend/tests/`](backend/tests/):
+
+- **API tests** ([`backend/tests/api/`](backend/tests/api/)) — verify that the FastAPI endpoints behave correctly using stubs instead of real OpenAI calls
+- **Evaluation tests** ([`backend/tests/evaluation/`](backend/tests/evaluation/)) — verify the quality of AI agent outputs against fixture-based expected results
+
+Run all tests from the `backend` directory:
+
+```bash
+pytest tests/api -v
+pytest tests/evaluation -v
+```
+
+## CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration. The pipeline runs automatically on every push and pull request to `main` and consists of four parallel jobs:
+
+- **Backend Tests** — runs `pytest tests/api`
+- **Backend Evaluation Tests** — runs `pytest tests/evaluation`
+- **Backend Lint** — runs `ruff check` to enforce code quality
+- **Frontend Build** — runs `npm run build` to verify the React app compiles
+
+Pipeline configuration: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+## AI Tools
+
+A detailed report of all AI tools used during development (OpenAI API, Claude Code, Antigravity, Google Stitch) is available in [`tools.md`](tools.md).
+
 ## User Stories
 
 | ID   | User Story                                                                                                                                                   | Priority | Status      |
@@ -101,5 +130,5 @@ Evaluation files:
 | US8  | As a user, I want to see my search history so that I can quickly return to previously analyzed companies.                                                    | Medium   | Done        |
 | US9  | As a user, I want a clean and easy-to-use interface so that I can quickly access the information I need.                                                     | High     | In Progress |
 | US10 | As a developer, I want to automatically test the main functionalities so that I can reduce errors and ensure the application works correctly.                | High     | In Progress |
-| US11 | As a developer, I want a CI/CD pipeline so that builds and tests run automatically on each commit.                                                           | Medium   | To Do       |
+| US11 | As a developer, I want a CI/CD pipeline so that builds and tests run automatically on each commit.                                                           | Medium   | Done        |
 | US12 | As a developer, I want to evaluate the AI agents' output so that I can verify that the results are coherent and useful.                                      | High     | In Progress |
