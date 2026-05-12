@@ -41,6 +41,22 @@ Claude Code was used as an AI pair programmer during development. Specific contr
 
 ---
 
+### 3. Antigravity
+
+**Role in the project:** UI/UX Design
+
+Antigravity was used during the design phase of the project to create the visual layout and user interface of the application.
+
+---
+
+### 4. Google Stitch
+
+**Role in the project:** UI/UX Design
+
+Google Stitch was used alongside Antigravity for designing the application's interface, helping define the visual structure and component layout before implementation in React.
+
+---
+
 ## AI-Assisted vs. Human-Written Code
 
 | Component | Author |
