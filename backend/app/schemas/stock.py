@@ -7,6 +7,9 @@ class NewsArticle(BaseModel):
     time: Optional[str] = None
     title: str
     sentiment: Optional[str] = None
+    sentiment_score: Optional[float] = None
+    relevance_score: Optional[float] = None
+    overall_sentiment: Optional[str] = None
     category: Optional[str] = None
     url: Optional[str] = None
     published_at: Optional[str] = None

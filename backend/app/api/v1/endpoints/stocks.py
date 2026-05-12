@@ -17,6 +17,17 @@ router = APIRouter()
 
 ALPHA_VANTAGE_NEWS_URL = "https://www.alphavantage.co/query"
 SYMBOL_PATTERN = re.compile(r"^[A-Z0-9.-]{1,12}$")
+MIN_PROVIDER_RELEVANCE_SCORE = 0.05
+KNOWN_COMPANY_TERMS = {
+    "AAPL": ["apple", "iphone", "ipad", "mac", "vision pro", "app store"],
+    "MSFT": ["microsoft", "azure", "windows", "xbox", "copilot", "linkedin"],
+    "GOOGL": ["alphabet", "google", "youtube", "gemini"],
+    "GOOG": ["alphabet", "google", "youtube", "gemini"],
+    "AMZN": ["amazon", "aws", "prime video"],
+    "META": ["meta", "facebook", "instagram", "whatsapp", "threads"],
+    "TSLA": ["tesla", "model y", "model 3", "cybertruck"],
+    "NVDA": ["nvidia", "gpu", "cuda", "blackwell"],
+}
 
 @router.get("/market/snapshot", response_model=List[MarketSnapshot])
 def get_market_snapshot(symbols: str = "AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA"):
@@ -91,7 +102,15 @@ async def get_stock_news(symbol: str, limit: int = Query(default=5, ge=1, le=20)
             logger.warning("Alpha Vantage returned no feed for %s: %s", symbol, data)
             return _fallback_news(symbol)[:limit]
 
-        return [_map_alpha_vantage_article(item) for item in feed[:limit]]
+        mapped_articles = [_map_alpha_vantage_article(item, symbol) for item in feed]
+        relevant_articles = [
+            article for article in mapped_articles if _has_requested_symbol_context(symbol, article)
+        ]
+        if not relevant_articles:
+            logger.warning("Alpha Vantage returned no text-relevant articles for %s.", symbol)
+            return _fallback_news(symbol)[:limit]
+
+        return relevant_articles[:limit]
     except httpx.HTTPError as e:
         logger.error("Error fetching news for %s: %s", symbol, e)
         raise HTTPException(
@@ -110,9 +129,10 @@ def _normalize_symbol(symbol: str) -> str:
     return normalized_symbol
 
 
-def _map_alpha_vantage_article(item: dict) -> dict:
+def _map_alpha_vantage_article(item: dict, symbol: str) -> dict:
     time_published = item.get("time_published", "")
     summary = item.get("summary", "")
+    ticker_sentiment = _find_ticker_sentiment(item, symbol)
 
     return {
         "title": item.get("title", ""),
@@ -122,7 +142,11 @@ def _map_alpha_vantage_article(item: dict) -> dict:
         "description": summary,
         "content": summary,
         "time": time_published,
-        "sentiment": item.get("overall_sentiment_label", ""),
+        "sentiment": ticker_sentiment.get("ticker_sentiment_label")
+        or item.get("overall_sentiment_label", ""),
+        "sentiment_score": _optional_float(ticker_sentiment.get("ticker_sentiment_score")),
+        "relevance_score": _optional_float(ticker_sentiment.get("relevance_score")),
+        "overall_sentiment": item.get("overall_sentiment_label", ""),
         "category": item.get("category_within_source", ""),
     }
 
@@ -131,7 +155,41 @@ def _format_alpha_vantage_date(time_published: str) -> str:
     try:
         return datetime.strptime(time_published, "%Y%m%dT%H%M%S").date().isoformat()
     except (TypeError, ValueError):
-        return time_published or ""
+        return ""
+
+
+def _find_ticker_sentiment(item: dict, symbol: str) -> dict:
+    ticker_sentiments = item.get("ticker_sentiment") or []
+    for ticker_item in ticker_sentiments:
+        if str(ticker_item.get("ticker", "")).upper() == symbol:
+            return ticker_item
+    return {}
+
+
+def _optional_float(value) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _has_requested_symbol_context(symbol: str, article: dict) -> bool:
+    relevance_score = article.get("relevance_score")
+    if relevance_score is not None and relevance_score < MIN_PROVIDER_RELEVANCE_SCORE:
+        return False
+
+    company_terms = KNOWN_COMPANY_TERMS.get(symbol)
+    if not company_terms:
+        return True
+
+    searchable_text = " ".join(
+        str(article.get(field) or "")
+        for field in ["title", "description", "content", "category"]
+    ).lower()
+    if re.search(rf"\b{re.escape(symbol.lower())}\b", searchable_text):
+        return True
+
+    return any(term in searchable_text for term in company_terms)
 
 
 def _fallback_news(symbol: str) -> list[dict]:
@@ -141,6 +199,9 @@ def _fallback_news(symbol: str) -> list[dict]:
             "time": "",
             "title": f"{symbol} news temporarily unavailable",
             "sentiment": "Neutral",
+            "sentiment_score": None,
+            "relevance_score": None,
+            "overall_sentiment": "Neutral",
             "category": "Fallback",
             "published_at": "",
             "description": "No external news feed was returned for this ticker.",

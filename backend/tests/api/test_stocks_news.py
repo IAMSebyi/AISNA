@@ -75,6 +75,14 @@ def test_stock_news_maps_alpha_vantage_articles(monkeypatch):
                     "summary": "Apple services revenue continued to grow.",
                     "overall_sentiment_label": "Positive",
                     "category_within_source": "Markets",
+                    "ticker_sentiment": [
+                        {
+                            "ticker": "AAPL",
+                            "relevance_score": "0.91",
+                            "ticker_sentiment_score": "0.42",
+                            "ticker_sentiment_label": "Somewhat-Bullish",
+                        }
+                    ],
                 }
             ]
         },
@@ -94,7 +102,10 @@ def test_stock_news_maps_alpha_vantage_articles(monkeypatch):
             "source": "Reuters",
             "time": "20260510T123000",
             "title": "Apple shares rise after services growth",
-            "sentiment": "Positive",
+            "sentiment": "Somewhat-Bullish",
+            "sentiment_score": 0.42,
+            "relevance_score": 0.91,
+            "overall_sentiment": "Positive",
             "category": "Markets",
             "url": "https://example.com/aapl-services",
             "published_at": "2026-05-10",
@@ -115,6 +126,58 @@ def test_stock_news_returns_fallback_when_feed_is_empty(monkeypatch):
     assert articles[0]["source"] == "Alpha Vantage Fallback"
     assert articles[0]["title"] == "TSLA news temporarily unavailable"
     assert articles[0]["sentiment"] == "Neutral"
+    assert articles[0]["overall_sentiment"] == "Neutral"
+
+
+def test_stock_news_filters_articles_without_requested_company_context(monkeypatch):
+    install_fake_alpha_vantage(
+        monkeypatch,
+        {
+            "feed": [
+                {
+                    "title": "GitLab shares fall after restructuring plan",
+                    "source": "Investing.com",
+                    "url": "https://example.com/gitlab",
+                    "time_published": "20260510T123000",
+                    "summary": "GitLab discussed restructuring plans and customer retention risks.",
+                    "overall_sentiment_label": "Neutral",
+                    "category_within_source": "General",
+                    "ticker_sentiment": [
+                        {
+                            "ticker": "MSFT",
+                            "relevance_score": "0.62",
+                            "ticker_sentiment_score": "0.14",
+                            "ticker_sentiment_label": "Neutral",
+                        }
+                    ],
+                },
+                {
+                    "title": "Microsoft cloud revenue remains resilient",
+                    "source": "Reuters",
+                    "url": "https://example.com/msft-cloud",
+                    "time_published": "20260510T123000",
+                    "summary": "Microsoft Azure revenue continued to grow despite cautious software spending.",
+                    "overall_sentiment_label": "Somewhat-Bullish",
+                    "category_within_source": "Markets",
+                    "ticker_sentiment": [
+                        {
+                            "ticker": "MSFT",
+                            "relevance_score": "0.78",
+                            "ticker_sentiment_score": "0.31",
+                            "ticker_sentiment_label": "Somewhat-Bullish",
+                        }
+                    ],
+                },
+            ]
+        },
+    )
+
+    response = client.get("/api/v1/stocks/MSFT/news?limit=5")
+
+    assert response.status_code == 200
+    articles = response.json()
+    assert len(articles) == 1
+    assert articles[0]["title"] == "Microsoft cloud revenue remains resilient"
 
 
 def test_stock_news_rejects_invalid_symbol():

@@ -41,6 +41,7 @@ Create `backend/.env` from `backend/.env.example` and set:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key_here
 OPENAI_MODEL=gpt-5.4-mini
 OPENAI_REASONING_EFFORT=low
 OPENAI_TIMEOUT_SECONDS=30
@@ -96,9 +97,9 @@ Evaluation files:
 | US4  | As a user, I want to see whether the overall sentiment of the news is positive, negative, or neutral so that I can quickly understand the market perception. | High     | Done        |
 | US5  | As a user, I want to receive a simple Buy / Hold / Sell recommendation so that I can interpret the news more easily.                                         | Medium   | Done        |
 | US6  | As a user, I want to see the reasoning behind the recommendation so that I can understand why that decision was suggested.                                   | Medium   | Done        |
-| US7  | As a user, I want to save favorite tickers so that I can track them more easily.                                                                             | Medium   | To Do       |
-| US8  | As a user, I want to see my search history so that I can quickly return to previously analyzed companies.                                                    | Medium   | To Do       |
-| US9  | As a user, I want a clean and easy-to-use interface so that I can quickly access the information I need.                                                     | High     | To Do       |
+| US7  | As a user, I want to save favorite tickers so that I can track them more easily.                                                                             | Medium   | Done        |
+| US8  | As a user, I want to see my search history so that I can quickly return to previously analyzed companies.                                                    | Medium   | Done        |
+| US9  | As a user, I want a clean and easy-to-use interface so that I can quickly access the information I need.                                                     | High     | In Progress |
 | US10 | As a developer, I want to automatically test the main functionalities so that I can reduce errors and ensure the application works correctly.                | High     | In Progress |
 | US11 | As a developer, I want a CI/CD pipeline so that builds and tests run automatically on each commit.                                                           | Medium   | To Do       |
 | US12 | As a developer, I want to evaluate the AI agents' output so that I can verify that the results are coherent and useful.                                      | High     | In Progress |
