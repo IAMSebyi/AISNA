@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  clearSavedAnalyses,
+  findCachedAnalysis,
+  getSavedAnalyses,
+  removeSavedAnalysis,
+  saveAnalysisRecord,
+} from '../services/analysisArchiveStorage';
 import { analyzeNewsReport } from '../services/analysisApi';
 import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesStorage';
 import { addSearchHistoryItem, clearSearchHistory, getSearchHistory } from '../services/searchHistoryStorage';
@@ -13,6 +20,9 @@ const initialArticles = [
     published_at: '2026-05-11',
     description: 'Apple demand appears stronger than expected.',
     content: 'Analysts reported increased demand for recent iPhone models and resilient services revenue.',
+    sentiment: 'Bullish',
+    relevance_score: 0.91,
+    sentiment_score: 0.42,
   },
   {
     title: 'Apple services revenue grows despite hardware concerns',
@@ -21,6 +31,9 @@ const initialArticles = [
     published_at: '2026-05-11',
     description: 'Services revenue remains a bright spot.',
     content: "Apple's services segment continued to grow, helping offset concerns about slower hardware upgrade cycles.",
+    sentiment: 'Somewhat-Bullish',
+    relevance_score: 0.86,
+    sentiment_score: 0.31,
   },
 ];
 
@@ -44,7 +57,99 @@ function emptyArticle() {
     published_at: '',
     description: '',
     content: '',
+    sentiment: '',
+    category: '',
+    relevance_score: null,
+    sentiment_score: null,
   };
+}
+
+const PROMPT_INJECTION_PATTERNS = [
+  /\b(ignore|bypass|override|forget|disregard)\b.{0,80}\b(prompt|instruction|system|developer|json|schema)\b/i,
+  /\b(chatgpt|openai|llm|language model)\b.{0,80}\b(ignore|bypass|override|forget|disregard|generate|write|print|output)\b/i,
+  /\b(generate|write|print|output)\b.{0,80}\b(hello world|c\+\+|python|javascript|code)\b/i,
+  /\b(act as|you are now|system prompt|developer message)\b/i,
+];
+
+function validateAnalysisInput(symbol, articles) {
+  if (!isValidStockSymbol(symbol)) {
+    return 'Enter a valid ticker using 1-12 letters, numbers, dots, or hyphens.';
+  }
+
+  if (articles.length === 0) {
+    return 'Add at least one article with a title before running the agents.';
+  }
+
+  for (const [index, article] of articles.entries()) {
+    const articleNumber = index + 1;
+    const titleLetters = (article.title.match(/[A-Za-z]/g) || []).length;
+    const combinedText = [article.title, article.description, article.content].filter(Boolean).join(' ');
+    const wordCount = (combinedText.match(/[A-Za-z0-9][A-Za-z0-9'.-]*/g) || []).length;
+    const letterCount = (combinedText.match(/[A-Za-z]/g) || []).length;
+
+    if (titleLetters < 3) {
+      return `Article ${articleNumber} needs a meaningful title.`;
+    }
+
+    if (wordCount < 5 || letterCount < 20) {
+      return `Article ${articleNumber} needs enough description or content to analyze.`;
+    }
+
+    if (article.url && !isValidHttpUrl(article.url)) {
+      return `Article ${articleNumber} URL must be a valid HTTP or HTTPS URL.`;
+    }
+
+    if (article.published_at && !isValidIsoDateOrDateTime(article.published_at)) {
+      return `Article ${articleNumber} published date must be a valid ISO date.`;
+    }
+
+    if ([article.title, article.description, article.content].some(containsPromptInjection)) {
+      return `Article ${articleNumber} looks like a prompt-injection attempt, not market news.`;
+    }
+  }
+
+  return '';
+}
+
+function containsPromptInjection(value) {
+  if (!value) return false;
+  return PROMPT_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isValidIsoDateOrDateTime(value) {
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) return true;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    const date = new Date(`${normalizedValue}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && normalizedValue === date.toISOString().slice(0, 10);
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(normalizedValue)) {
+    return false;
+  }
+
+  return !Number.isNaN(Date.parse(normalizedValue));
+}
+
+function normalizeProviderSentiment(sentiment) {
+  const normalizedSentiment = String(sentiment || '').toLowerCase();
+  if (normalizedSentiment.includes('bullish') || normalizedSentiment === 'positive') {
+    return 'positive';
+  }
+  if (normalizedSentiment.includes('bearish') || normalizedSentiment === 'negative') {
+    return 'negative';
+  }
+  return 'neutral';
 }
 
 export default function Analysis() {
@@ -63,6 +168,7 @@ export default function Analysis() {
   const [showArticleEditor, setShowArticleEditor] = useState(false);
   const [, setFavoriteTickersVersion] = useState(0);
   const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
+  const [savedAnalyses, setSavedAnalyses] = useState(() => getSavedAnalyses());
   const [activeResultPanel, setActiveResultPanel] = useState('');
 
   const normalizedSymbol = normalizeStockSymbol(symbol);
@@ -70,7 +176,7 @@ export default function Analysis() {
   const isCurrentTickerFavorite = symbolIsValid && isFavoriteTicker(normalizedSymbol);
 
   const canSubmit = useMemo(() => {
-    return symbolIsValid && articles.some((article) => article.title.trim());
+    return symbolIsValid && articles.some((article) => String(article.title || '').trim());
   }, [articles, symbolIsValid]);
 
   const updateArticle = (index, field, value) => {
@@ -133,6 +239,10 @@ export default function Analysis() {
           published_at: article.published_at || '',
           description: article.description || '',
           content: article.content || '',
+          sentiment: article.sentiment || '',
+          category: article.category || '',
+          relevance_score: typeof article.relevance_score === 'number' ? article.relevance_score : null,
+          sentiment_score: typeof article.sentiment_score === 'number' ? article.sentiment_score : null,
         })));
         setLastFetchedSymbol(normalizedSymbol);
         setSearchHistory(addSearchHistoryItem(normalizedSymbol));
@@ -167,40 +277,85 @@ export default function Analysis() {
     setError('');
   };
 
+  const applyReport = (report) => {
+    setSummary(report.summary);
+    setSentiment({
+      ...report.sentiment,
+      recommendation: report.recommendation,
+    });
+    setActiveResultPanel('');
+  };
+
+  const handleLoadSavedAnalysis = (record) => {
+    setSymbol(record.symbol);
+    setArticles(record.articles);
+    applyReport(record.report);
+    setNewsNotice(`Loaded cached ${record.symbol} analysis from ${formatHistoryTime(record.createdAt)}.`);
+    setError('');
+    setShowArticleEditor(false);
+  };
+
+  const handleRemoveSavedAnalysis = (id) => {
+    removeSavedAnalysis(id);
+    setSavedAnalyses(getSavedAnalyses());
+  };
+
+  const handleClearSavedAnalyses = () => {
+    clearSavedAnalyses();
+    setSavedAnalyses([]);
+  };
+
   const runAnalysis = async (event) => {
     event.preventDefault();
-    setIsLoading(true);
     setError('');
     setNewsNotice('');
     setSummary(null);
     setSentiment(null);
     setActiveResultPanel('');
 
+    const payloadArticles = articles
+      .filter((article) => String(article.title || '').trim())
+      .map((article) => ({
+        ...article,
+        title: String(article.title || '').trim(),
+        source: String(article.source || '').trim(),
+        url: String(article.url || '').trim(),
+        published_at: String(article.published_at || '').trim(),
+        description: String(article.description || '').trim() || null,
+        content: String(article.content || '').trim() || null,
+        sentiment: String(article.sentiment || '').trim() || null,
+        category: String(article.category || '').trim() || null,
+        relevance_score: typeof article.relevance_score === 'number' ? article.relevance_score : null,
+        sentiment_score: typeof article.sentiment_score === 'number' ? article.sentiment_score : null,
+      }));
+
+    const validationError = validateAnalysisInput(normalizedSymbol, payloadArticles);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const cachedAnalysis = findCachedAnalysis(normalizedSymbol, payloadArticles);
+    if (cachedAnalysis) {
+      applyReport(cachedAnalysis.report);
+      setNewsNotice(`Loaded cached ${normalizedSymbol} analysis from ${formatHistoryTime(cachedAnalysis.createdAt)}.`);
+      return;
+    }
+
+    setIsLoading(true);
+
     const payload = {
       symbol: normalizedSymbol,
-      articles: articles
-        .filter((article) => article.title.trim())
-        .map((article) => ({
-          ...article,
-          title: article.title.trim(),
-          source: article.source.trim(),
-          url: article.url.trim(),
-          published_at: article.published_at.trim(),
-          description: article.description.trim() || null,
-          content: article.content.trim() || null,
-        })),
+      articles: payloadArticles,
       max_key_points: 5,
     };
 
     try {
       const report = await analyzeNewsReport(payload);
-
-      setSummary(report.summary);
-      setSentiment({
-        ...report.sentiment,
-        recommendation: report.recommendation,
-      });
-      setActiveResultPanel('');
+      applyReport(report);
+      saveAnalysisRecord({ symbol: normalizedSymbol, articles: payloadArticles, report });
+      setSavedAnalyses(getSavedAnalyses());
+      setNewsNotice(`Analysis saved locally for ${normalizedSymbol}. Re-running the same input will use the cache.`);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -283,6 +438,13 @@ export default function Analysis() {
               onClear={handleClearHistory}
               onSelect={handleUseHistoryItem}
             />
+
+            <SavedAnalysesPanel
+              records={savedAnalyses.slice(0, 5)}
+              onClear={handleClearSavedAnalyses}
+              onLoad={handleLoadSavedAnalysis}
+              onRemove={handleRemoveSavedAnalysis}
+            />
           </div>
 
           <div className="glass-panel rounded-xl p-lg flex flex-col gap-md">
@@ -321,6 +483,7 @@ export default function Analysis() {
 
                     <input
                       className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      maxLength={240}
                       value={article.title}
                       onChange={(event) => updateArticle(index, 'title', event.target.value)}
                       placeholder="Article title"
@@ -328,25 +491,53 @@ export default function Analysis() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                       <input
                         className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        maxLength={120}
                         value={article.source}
                         onChange={(event) => updateArticle(index, 'source', event.target.value)}
                         placeholder="Source"
                       />
                       <input
                         className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        maxLength={40}
                         value={article.published_at}
                         onChange={(event) => updateArticle(index, 'published_at', event.target.value)}
-                        placeholder="Published date"
+                        placeholder="Published date (YYYY-MM-DD)"
                       />
                     </div>
                     <input
                       className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      maxLength={2048}
+                      type="url"
                       value={article.url}
                       onChange={(event) => updateArticle(index, 'url', event.target.value)}
-                      placeholder="URL"
+                      placeholder="https://example.com/article"
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                      <input
+                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        maxLength={40}
+                        value={article.sentiment || ''}
+                        onChange={(event) => updateArticle(index, 'sentiment', event.target.value)}
+                        placeholder="Provider sentiment label"
+                      />
+                      <input
+                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                        maxLength={120}
+                        value={article.category || ''}
+                        onChange={(event) => updateArticle(index, 'category', event.target.value)}
+                        placeholder="Category"
+                      />
+                    </div>
+                    <textarea
+                      className="min-h-20 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      maxLength={1200}
+                      value={article.description || ''}
+                      onChange={(event) => updateArticle(index, 'description', event.target.value)}
+                      placeholder="Article description"
                     />
                     <textarea
                       className="min-h-28 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
+                      maxLength={8000}
                       value={article.content}
                       onChange={(event) => updateArticle(index, 'content', event.target.value)}
                       placeholder="Article content"
@@ -461,6 +652,65 @@ function SearchHistoryPanel({ history, onClear, onSelect }) {
   );
 }
 
+function SavedAnalysesPanel({ records, onClear, onLoad, onRemove }) {
+  if (records.length === 0) {
+    return (
+      <section className="rounded-lg border border-outline-variant/20 bg-surface-container/50 p-md flex items-center gap-3 text-on-surface-variant">
+        <span className="material-symbols-outlined text-outline text-base">save</span>
+        <div className="min-w-0">
+          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Analyses</h3>
+          <p className="font-data-mono text-[11px]">Completed reports will be cached locally.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-outline-variant/20 bg-surface-container/50 p-md flex flex-col gap-sm">
+      <div className="flex items-center justify-between gap-md">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary text-base">save</span>
+          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Analyses</h3>
+        </div>
+        <button
+          className="inline-flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm"
+          type="button"
+          onClick={onClear}
+        >
+          <span className="material-symbols-outlined text-base">delete_sweep</span>
+          Clear
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-sm">
+        {records.map((record) => (
+          <div className="rounded-lg border border-outline-variant/20 bg-surface-container/60 p-sm flex items-center justify-between gap-sm" key={record.id}>
+            <button
+              className="min-w-0 text-left"
+              type="button"
+              onClick={() => onLoad(record)}
+              title="Load saved analysis"
+            >
+              <div className="font-data-mono text-data-mono text-primary">{record.symbol}</div>
+              <div className="font-data-mono text-[11px] text-on-surface-variant truncate">
+                {formatHistoryTime(record.createdAt)} - {record.articleCount} articles
+              </div>
+            </button>
+            <button
+              className="shrink-0 text-on-surface-variant hover:text-error transition-colors"
+              type="button"
+              onClick={() => onRemove(record.id)}
+              aria-label={`Remove saved ${record.symbol} analysis`}
+            >
+              <span className="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function formatHistoryTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -501,7 +751,7 @@ function NewsArticlesPanel({ articles, isLoading, symbol }) {
 }
 
 function NewsArticleCard({ article, index }) {
-  const normalizedSentiment = (article.sentiment || 'neutral').toLowerCase();
+  const normalizedSentiment = normalizeProviderSentiment(article.sentiment);
   const sentimentStyle = sentimentStyles[normalizedSentiment] || sentimentStyles.neutral;
   const description = article.description || article.content || 'No description available.';
 
@@ -521,6 +771,11 @@ function NewsArticleCard({ article, index }) {
         )}
       </div>
       <p className="font-body-md text-body-md text-on-surface-variant">{description}</p>
+      {typeof article.relevance_score === 'number' && (
+        <span className="font-data-mono text-[11px] text-on-surface-variant">
+          Provider relevance: {Math.round(article.relevance_score * 100)}%
+        </span>
+      )}
       {article.url && (
         <a
           className="inline-flex w-fit items-center gap-1 text-primary hover:text-primary-fixed font-label-sm text-label-sm"

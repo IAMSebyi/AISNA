@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_BACKEND_URL || 'http://127.0.0.1:8010',
           changeOrigin: true,
+        },
+        '/health': {
+          target: env.VITE_BACKEND_URL || 'http://127.0.0.1:8010',
+          changeOrigin: true,
         }
       }
     }

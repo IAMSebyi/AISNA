@@ -15,7 +15,8 @@ function App() {
           <TopNavBar />
           <div className="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto pb-24">
             <Routes>
-              <Route path="/" element={<Navigate to="/terminal" replace />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Terminal />} />
               <Route path="/terminal" element={<Terminal />} />
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/portfolio" element={<Portfolio />} />
