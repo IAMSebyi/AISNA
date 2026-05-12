@@ -16,7 +16,7 @@ export async function fetchStockNews(symbol, limit = 5) {
   try {
     response = await fetch(`${API_BASE}/${encodeURIComponent(normalizedSymbol)}/news?limit=${limit}`);
   } catch {
-    throw new Error('Backend is unavailable. Start the FastAPI server and try again.');
+    throw new Error('News is currently unavailable. Please try again shortly.');
   }
 
   if (!response.ok) {

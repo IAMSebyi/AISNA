@@ -12,7 +12,7 @@ async function postJson(path, payload) {
       body: JSON.stringify(payload),
     });
   } catch {
-    throw new Error('Backend is unavailable. Start the FastAPI server and try again.');
+    throw new Error('Analysis is currently unavailable. Please try again shortly.');
   }
 
   if (!response.ok) {
@@ -26,7 +26,7 @@ async function postJson(path, payload) {
 
 function formatAnalysisError(detail, status) {
   if (typeof detail === 'string' && detail.includes('OPENAI_API_KEY')) {
-    return 'OpenAI API key is not configured. You can still search and read news, but AI analysis requires backend/.env to include OPENAI_API_KEY.';
+    return 'AI analysis is not available right now. You can still search and read the latest news.';
   }
 
   return detail || `Request failed with status ${status}`;

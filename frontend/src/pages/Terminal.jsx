@@ -19,10 +19,11 @@ export default function Terminal() {
     error: '',
     ticker: '',
   });
-  const featuredTicker = useMemo(() => {
+  const featuredTickers = useMemo(() => {
     const candidateTickers = favoriteTickers.length > 0 ? favoriteTickers : MAG7_TICKERS;
-    return pickStableTicker(candidateTickers);
+    return rotateTickers(candidateTickers, pickStableIndex(candidateTickers));
   }, [favoriteTickers]);
+  const featuredTicker = featuredArticleState.ticker || featuredTickers[0] || MAG7_TICKERS[0];
 
   useEffect(() => {
     const refreshLocalData = () => {
@@ -45,28 +46,28 @@ export default function Terminal() {
   useEffect(() => {
     let isCancelled = false;
 
-    fetchStockNews(featuredTicker, 1)
-      .then((articles) => {
+    loadFirstAvailableArticle(featuredTickers)
+      .then(({ article, ticker }) => {
         if (isCancelled) return;
         setFeaturedArticleState({
-          article: articles[0] || null,
-          error: articles[0] ? '' : `No recent article found for ${featuredTicker}.`,
-          ticker: featuredTicker,
+          article,
+          error: '',
+          ticker,
         });
       })
       .catch((error) => {
         if (isCancelled) return;
         setFeaturedArticleState({
           article: null,
-          error: error.message || `Could not load latest article for ${featuredTicker}.`,
-          ticker: featuredTicker,
+          error: error.message || 'Could not load a recent article right now.',
+          ticker: featuredTickers[0] || MAG7_TICKERS[0],
         });
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [featuredTicker]);
+  }, [featuredTickers]);
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -87,7 +88,7 @@ export default function Terminal() {
           <p className="font-label-sm text-label-sm text-primary uppercase">AISNA Dashboard</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface mt-1">AI Stock News Analyzer</h1>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-3xl">
-            Search a ticker, fetch live Alpha Vantage news, generate a summary, run sentiment analysis, and keep the report cached for the demo.
+            Search a ticker, read the latest financial news, generate a summary, and review sentiment-based recommendations.
           </p>
         </div>
 
@@ -146,8 +147,8 @@ export default function Terminal() {
           {savedAnalyses.length === 0 ? (
             <EmptyState
               icon="insights"
-              title="No cached reports"
-              text="Run an analysis once and it will be saved locally for reuse during the demo."
+              title="No saved reports"
+              text="Run an analysis to keep important reports available here."
             />
           ) : (
             <div className="flex flex-col gap-sm">
@@ -205,7 +206,7 @@ export default function Terminal() {
           <LatestArticlePanel
             article={featuredArticleState.article}
             error={featuredArticleState.error}
-            isLoading={featuredArticleState.ticker !== featuredTicker}
+            isLoading={!featuredArticleState.ticker}
             symbol={featuredTicker}
           />
         </div>
@@ -317,12 +318,44 @@ function formatDateTime(value) {
   return date.toLocaleString();
 }
 
-function pickStableTicker(tickers) {
-  const cleanTickers = tickers.filter(Boolean);
-  if (cleanTickers.length === 0) {
-    return MAG7_TICKERS[0];
+async function loadFirstAvailableArticle(tickers) {
+  const uniqueTickers = [...new Set([...tickers, ...MAG7_TICKERS].filter(Boolean))];
+  let lastError = null;
+
+  for (const ticker of uniqueTickers) {
+    try {
+      const articles = await fetchStockNews(ticker, 3);
+      const article = articles.find((item) => !isFallbackArticle(item));
+      if (article) {
+        return { article, ticker };
+      }
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  const dayIndex = Math.floor(Date.now() / 86400000) % cleanTickers.length;
-  return cleanTickers[dayIndex];
+  throw lastError || new Error('No recent financial articles found.');
+}
+
+function isFallbackArticle(article) {
+  return article?.source === 'Alpha Vantage Fallback'
+    || String(article?.title || '').toLowerCase().includes('news temporarily unavailable');
+}
+
+function pickStableIndex(tickers) {
+  const cleanTickers = tickers.filter(Boolean);
+  if (cleanTickers.length === 0) {
+    return 0;
+  }
+
+  return Math.floor(Date.now() / 86400000) % cleanTickers.length;
+}
+
+function rotateTickers(tickers, startIndex) {
+  const cleanTickers = tickers.filter(Boolean);
+  if (cleanTickers.length === 0) {
+    return [MAG7_TICKERS[0]];
+  }
+
+  return [...cleanTickers.slice(startIndex), ...cleanTickers.slice(0, startIndex)];
 }

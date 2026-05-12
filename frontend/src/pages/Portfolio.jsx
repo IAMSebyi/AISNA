@@ -94,7 +94,7 @@ export default function Portfolio() {
         </div>
         {savedAnalyses.length === 0 ? (
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Run an analysis to save a local report for demo reuse.
+            Run an analysis to save a report for quick review.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">

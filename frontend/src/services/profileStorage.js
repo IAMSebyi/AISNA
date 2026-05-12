@@ -2,7 +2,7 @@ const PROFILE_KEY = 'aisna.profile';
 const PROFILE_CHANGED_EVENT = 'aisna:profile-changed';
 
 const DEFAULT_PROFILE = {
-  name: 'Demo Analyst',
+  name: 'Stock Analyst',
   role: 'Research analyst',
   riskProfile: 'Balanced',
 };

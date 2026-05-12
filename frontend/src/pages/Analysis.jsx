@@ -77,7 +77,7 @@ function validateAnalysisInput(symbol, articles) {
   }
 
   if (articles.length === 0) {
-    return 'Add at least one article with a title before running the agents.';
+    return 'Add at least one article with a title before running the analysis.';
   }
 
   for (const [index, article] of articles.entries()) {
@@ -104,7 +104,7 @@ function validateAnalysisInput(symbol, articles) {
     }
 
     if ([article.title, article.description, article.content].some(containsPromptInjection)) {
-      return `Article ${articleNumber} looks like a prompt-injection attempt, not market news.`;
+      return `Article ${articleNumber} does not look like valid market news.`;
     }
   }
 
@@ -290,7 +290,7 @@ export default function Analysis() {
     setSymbol(record.symbol);
     setArticles(record.articles);
     applyReport(record.report);
-    setNewsNotice(`Loaded cached ${record.symbol} analysis from ${formatHistoryTime(record.createdAt)}.`);
+    setNewsNotice(`Loaded saved ${record.symbol} report from ${formatHistoryTime(record.createdAt)}.`);
     setError('');
     setShowArticleEditor(false);
   };
@@ -338,7 +338,7 @@ export default function Analysis() {
     const cachedAnalysis = findCachedAnalysis(normalizedSymbol, payloadArticles);
     if (cachedAnalysis) {
       applyReport(cachedAnalysis.report);
-      setNewsNotice(`Loaded cached ${normalizedSymbol} analysis from ${formatHistoryTime(cachedAnalysis.createdAt)}.`);
+      setNewsNotice(`Loaded saved ${normalizedSymbol} report from ${formatHistoryTime(cachedAnalysis.createdAt)}.`);
       return;
     }
 
@@ -355,7 +355,7 @@ export default function Analysis() {
       applyReport(report);
       saveAnalysisRecord({ symbol: normalizedSymbol, articles: payloadArticles, report });
       setSavedAnalyses(getSavedAnalyses());
-      setNewsNotice(`Analysis saved locally for ${normalizedSymbol}. Re-running the same input will use the cache.`);
+      setNewsNotice(`${normalizedSymbol} report saved.`);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -367,15 +367,11 @@ export default function Analysis() {
     <div className="max-w-7xl mx-auto flex flex-col gap-lg w-full">
       <header className="flex flex-col lg:flex-row gap-md lg:items-end lg:justify-between pb-sm border-b border-outline-variant/20">
         <div>
-          <p className="font-label-sm text-label-sm text-primary uppercase">AISNA Agent Console</p>
+          <p className="font-label-sm text-label-sm text-primary uppercase">AISNA Research Workspace</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface mt-1">News Analysis</h1>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-3xl">
-            Run the summarizer and sentiment agents against the same set of news articles, then inspect the recommendation generated from sentiment evidence.
+            Search recent news, generate a concise summary, review sentiment, and compare the Buy / Hold / Sell recommendation.
           </p>
-        </div>
-        <div className="flex items-center gap-2 text-on-surface-variant font-data-mono text-data-mono">
-          <span className="material-symbols-outlined text-primary">hub</span>
-          <span>Backend: /api/v1/analysis</span>
         </div>
       </header>
 
@@ -385,7 +381,7 @@ export default function Analysis() {
             <div className="flex items-center justify-between gap-md">
               <div>
                 <h2 className="font-headline-md text-headline-md text-on-surface">Input</h2>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-1">Search a ticker, fetch news, then send the article context to the agents.</p>
+                <p className="font-body-md text-body-md text-on-surface-variant mt-1">Search a ticker, fetch news, then analyze the selected articles.</p>
               </div>
               <button
                 className="inline-flex items-center gap-2 rounded-lg border border-outline-variant/40 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:border-primary transition-colors font-label-sm text-label-sm"
@@ -450,7 +446,7 @@ export default function Analysis() {
           <div className="glass-panel rounded-xl p-lg flex flex-col gap-md">
             <div className="flex items-center justify-between gap-md">
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface">Agent Article Context</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface">Selected Articles</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">{articles.length} article{articles.length === 1 ? '' : 's'} ready for analysis.</p>
               </div>
               <button
@@ -566,7 +562,7 @@ export default function Analysis() {
               disabled={!canSubmit || isLoading}
             >
               <span className="material-symbols-outlined">{isLoading ? 'sync' : 'psychology'}</span>
-              {isLoading ? 'Analyzing' : 'Run Agents'}
+              {isLoading ? 'Analyzing' : 'Analyze News'}
             </button>
           </div>
 
@@ -658,8 +654,8 @@ function SavedAnalysesPanel({ records, onClear, onLoad, onRemove }) {
       <section className="rounded-lg border border-outline-variant/20 bg-surface-container/50 p-md flex items-center gap-3 text-on-surface-variant">
         <span className="material-symbols-outlined text-outline text-base">save</span>
         <div className="min-w-0">
-          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Analyses</h3>
-          <p className="font-data-mono text-[11px]">Completed reports will be cached locally.</p>
+          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Reports</h3>
+          <p className="font-data-mono text-[11px]">Completed reports will appear here.</p>
         </div>
       </section>
     );
@@ -670,7 +666,7 @@ function SavedAnalysesPanel({ records, onClear, onLoad, onRemove }) {
       <div className="flex items-center justify-between gap-md">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-base">save</span>
-          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Analyses</h3>
+          <h3 className="font-label-sm text-label-sm text-on-surface">Saved Reports</h3>
         </div>
         <button
           className="inline-flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors font-label-sm text-label-sm"
@@ -689,7 +685,7 @@ function SavedAnalysesPanel({ records, onClear, onLoad, onRemove }) {
               className="min-w-0 text-left"
               type="button"
               onClick={() => onLoad(record)}
-              title="Load saved analysis"
+              title="Open saved report"
             >
               <div className="font-data-mono text-data-mono text-primary">{record.symbol}</div>
               <div className="font-data-mono text-[11px] text-on-surface-variant truncate">
@@ -773,7 +769,7 @@ function NewsArticleCard({ article, index }) {
       <p className="font-body-md text-body-md text-on-surface-variant">{description}</p>
       {typeof article.relevance_score === 'number' && (
         <span className="font-data-mono text-[11px] text-on-surface-variant">
-          Provider relevance: {Math.round(article.relevance_score * 100)}%
+          Relevance: {Math.round(article.relevance_score * 100)}%
         </span>
       )}
       {article.url && (
@@ -793,9 +789,9 @@ function NewsArticleCard({ article, index }) {
 
 function AgentStatus({ activePanel, isLoading, onSelect, summary, sentiment }) {
   const statusItems = [
-    { id: 'summary', label: 'News Summarizer', done: Boolean(summary), icon: 'summarize' },
-    { id: 'sentiment', label: 'Sentiment Agent', done: Boolean(sentiment), icon: 'psychology' },
-    { id: 'recommendation', label: 'Recommendation Logic', done: Boolean(sentiment?.recommendation), icon: 'rule' },
+    { id: 'summary', label: 'Summary', done: Boolean(summary), icon: 'summarize' },
+    { id: 'sentiment', label: 'Sentiment', done: Boolean(sentiment), icon: 'psychology' },
+    { id: 'recommendation', label: 'Recommendation', done: Boolean(sentiment?.recommendation), icon: 'rule' },
   ];
 
   const handleSelect = (item) => {
@@ -835,11 +831,11 @@ function AgentStatus({ activePanel, isLoading, onSelect, summary, sentiment }) {
 
 function ResultPanelHost({ activePanel, sentiment, summary }) {
   if (!summary && !sentiment) {
-    return <EmptyPanel title="Agent Results" icon="insights" text="Run the agents, then open completed result cards above." />;
+    return <EmptyPanel title="Analysis Results" icon="insights" text="Analyze the selected articles, then open completed result cards above." />;
   }
 
   if (!activePanel) {
-    return <EmptyPanel title="Agent Results" icon="touch_app" text="Select a completed result card to inspect the output." />;
+    return <EmptyPanel title="Analysis Results" icon="touch_app" text="Select a completed result card to review the output." />;
   }
 
   return (
@@ -853,7 +849,7 @@ function ResultPanelHost({ activePanel, sentiment, summary }) {
 
 function RecommendationPanel({ sentiment }) {
   if (!sentiment?.recommendation) {
-    return <EmptyPanel title="Recommendation" icon="rule" text="Run the agents to calculate Buy / Hold / Sell from sentiment evidence." />;
+    return <EmptyPanel title="Recommendation" icon="rule" text="Analyze the articles to calculate Buy / Hold / Sell from sentiment evidence." />;
   }
 
   const recommendation = sentiment.recommendation;

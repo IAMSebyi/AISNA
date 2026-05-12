@@ -9,7 +9,7 @@ export default function Settings() {
     event.preventDefault();
     const savedProfile = saveProfile(profile);
     setProfile(savedProfile);
-    setNotice('Profile saved locally for this browser.');
+    setNotice('Profile updated.');
   };
 
   return (
@@ -18,7 +18,7 @@ export default function Settings() {
         <p className="font-label-sm text-label-sm text-primary uppercase">AISNA Profile</p>
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Settings</h1>
         <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-          Configure the local analyst profile used by the demo interface.
+          Personalize how your analysis workspace appears.
         </p>
       </header>
 
@@ -87,13 +87,13 @@ export default function Settings() {
         <aside className="xl:col-span-5 glass-panel rounded-xl p-lg flex flex-col gap-md">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">security</span>
-            <h2 className="font-headline-md text-headline-md text-on-surface">Demo Guardrails</h2>
+            <h2 className="font-headline-md text-headline-md text-on-surface">Analysis Preferences</h2>
           </div>
           <ul className="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
-            <li>Search accepts only ticker-like input.</li>
-            <li>Article editor fields have length limits and metadata validation.</li>
-            <li>Saved reports are stored only in localStorage.</li>
-            <li>The recommendation is generated from sentiment output, not direct trading advice.</li>
+            <li>Use ticker symbols such as AAPL, MSFT, NVDA, or BRK.B.</li>
+            <li>Choose a risk profile that matches how cautious you want the workspace to feel.</li>
+            <li>Saved reports stay available in your browser for quick review.</li>
+            <li>Recommendations summarize news sentiment and should be reviewed alongside your own research.</li>
           </ul>
         </aside>
       </section>
