@@ -26,6 +26,7 @@ export default function Portfolio() {
   const [formPrice, setFormPrice] = useState('');
   const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [formError, setFormError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
   // AI Advisor states
   const [advisorReport, setAdvisorReport] = useState(() => {
@@ -150,29 +151,41 @@ export default function Portfolio() {
   }, [holdings]);
 
   // Form handlers
-  const handleAddTransaction = (event) => {
+  const handleAddTransaction = async (event) => {
     event.preventDefault();
     setFormError('');
+    setIsAdding(true);
 
     const normSymbol = normalizeStockSymbol(formSymbol);
     if (!isValidStockSymbol(normSymbol)) {
       setFormError('Invalid ticker symbol format.');
+      setIsAdding(false);
       return;
     }
 
     const shares = parseFloat(formShares);
     if (Number.isNaN(shares) || shares <= 0) {
       setFormError('Shares quantity must be greater than 0.');
+      setIsAdding(false);
       return;
     }
 
     const price = parseFloat(formPrice);
     if (Number.isNaN(price) || price < 0) {
       setFormError('Price must be greater than or equal to 0.');
+      setIsAdding(false);
       return;
     }
 
     try {
+      // Query backend to verify if the symbol is a valid/real ticker
+      const snapshot = await fetchMarketSnapshot([normSymbol]);
+      if (!snapshot || snapshot.length === 0) {
+        setFormError(`Ticker "${normSymbol}" is not active or could not be found.`);
+        setIsAdding(false);
+        return;
+      }
+
       addTransaction({
         symbol: normSymbol,
         shares,
@@ -185,7 +198,9 @@ export default function Portfolio() {
       setFormPrice('');
       setFormDate(new Date().toISOString().split('T')[0]);
     } catch (err) {
-      setFormError(err.message || 'Failed to record transaction.');
+      setFormError(err.message || 'Failed to verify ticker or record transaction.');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -271,7 +286,7 @@ export default function Portfolio() {
           </div>
         </div>
         <MetricCard
-          icon="percentage"
+          icon="percent"
           label="Return Percentage"
           value={`${totalReturnPercent >= 0 ? '+' : ''}${totalReturnPercent.toFixed(2)}%`}
           valueClass={totalReturnPercent >= 0 ? 'text-emerald-300' : 'text-red-300'}
@@ -411,11 +426,14 @@ export default function Portfolio() {
               <div className="flex items-center justify-between gap-md mt-sm">
                 {formError && <span className="font-label-sm text-label-sm text-error">{formError}</span>}
                 <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-on-primary hover:bg-primary-fixed transition-colors font-label-sm text-label-sm cursor-pointer ml-auto"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-on-primary hover:bg-primary-fixed transition-colors font-label-sm text-label-sm cursor-pointer ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
                   type="submit"
+                  disabled={isAdding}
                 >
-                  <span className="material-symbols-outlined text-base">add</span>
-                  Record buy
+                  <span className={`material-symbols-outlined text-base ${isAdding ? 'animate-spin' : ''}`}>
+                    {isAdding ? 'sync' : 'add'}
+                  </span>
+                  {isAdding ? 'Verifying Ticker...' : 'Record buy'}
                 </button>
               </div>
             </form>
@@ -542,8 +560,8 @@ export default function Portfolio() {
                   <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Strategic Advisory Notes</span>
                   {advisorReport.advisory_notes.map((note, idx) => (
                     <div className="flex gap-2 text-on-surface-variant font-body-md text-body-md" key={idx}>
-                      <span className="material-symbols-outlined text-primary text-base mt-1">campaign</span>
-                      <span>{note}</span>
+                      <span className="material-symbols-outlined text-primary text-base mt-1 flex-shrink-0">campaign</span>
+                      <span className="flex-1">{note}</span>
                     </div>
                   ))}
                 </div>
