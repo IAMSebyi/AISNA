@@ -209,3 +209,31 @@ def test_legacy_analysis_endpoints_are_removed():
 
     assert client.post("/api/v1/analysis/news-summary", json=payload).status_code == 404
     assert client.post("/api/v1/analysis/news-sentiment", json=payload).status_code == 404
+
+
+def test_news_report_endpoint_accepts_valid_risk_profiles(monkeypatch):
+    install_agent(monkeypatch, NewsReportAgentStub())
+
+    for profile in ["Conservative", "Balanced", "Aggressive"]:
+        response = client.post(
+            "/api/v1/analysis/news-report",
+            json={
+                "symbol": "AAPL",
+                "articles": [sample_article()],
+                "risk_profile": profile,
+            },
+        )
+        assert response.status_code == 200
+
+
+def test_news_report_endpoint_rejects_invalid_risk_profile():
+    response = client.post(
+        "/api/v1/analysis/news-report",
+        json={
+            "symbol": "AAPL",
+            "articles": [sample_article()],
+            "risk_profile": "Risky",
+        },
+    )
+    assert response.status_code == 422
+

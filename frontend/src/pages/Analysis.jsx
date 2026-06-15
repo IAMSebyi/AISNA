@@ -12,6 +12,7 @@ import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesSto
 import { addSearchHistoryItem, clearSearchHistory, getSearchHistory } from '../services/searchHistoryStorage';
 import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
 import StockChart from '../components/StockChart';
+import { getProfile } from '../services/profileStorage';
 
 const initialArticles = [
   {
@@ -332,13 +333,14 @@ export default function Analysis() {
         sentiment_score: typeof article.sentiment_score === 'number' ? article.sentiment_score : null,
       }));
 
+    const activeProfile = getProfile();
     const validationError = validateAnalysisInput(normalizedSymbol, payloadArticles);
     if (validationError) {
       setError(validationError);
       return;
     }
 
-    const cachedAnalysis = findCachedAnalysis(normalizedSymbol, payloadArticles);
+    const cachedAnalysis = findCachedAnalysis(normalizedSymbol, payloadArticles, activeProfile.riskProfile);
     if (cachedAnalysis) {
       applyReport(cachedAnalysis.report);
       setNewsNotice(`Loaded saved ${normalizedSymbol} report from ${formatHistoryTime(cachedAnalysis.createdAt)}.`);
@@ -351,12 +353,18 @@ export default function Analysis() {
       symbol: normalizedSymbol,
       articles: payloadArticles,
       max_key_points: 5,
+      risk_profile: activeProfile.riskProfile,
     };
 
     try {
       const report = await analyzeNewsReport(payload);
       applyReport(report);
-      saveAnalysisRecord({ symbol: normalizedSymbol, articles: payloadArticles, report });
+      saveAnalysisRecord({
+        symbol: normalizedSymbol,
+        articles: payloadArticles,
+        report,
+        riskProfile: activeProfile.riskProfile,
+      });
       setSavedAnalyses(getSavedAnalyses());
       setNewsNotice(`${normalizedSymbol} report saved.`);
     } catch (requestError) {

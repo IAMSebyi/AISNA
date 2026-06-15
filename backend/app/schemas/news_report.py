@@ -9,6 +9,7 @@ class NewsReportRequest(BaseModel):
     symbol: str = Field(..., min_length=1, max_length=12)
     articles: list[NewsArticleForSummary] = Field(..., min_length=1)
     max_key_points: int = Field(default=5, ge=1, le=10)
+    risk_profile: str = Field(default="Balanced", pattern="^(Conservative|Balanced|Aggressive)$")
 
     @field_validator("symbol")
     @classmethod

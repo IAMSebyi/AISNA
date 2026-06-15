@@ -12,15 +12,15 @@ export function getSavedAnalyses() {
   }
 }
 
-export function findCachedAnalysis(symbol, articles) {
-  const signature = buildAnalysisSignature(symbol, articles);
+export function findCachedAnalysis(symbol, articles, riskProfile = 'Balanced') {
+  const signature = buildAnalysisSignature(symbol, articles, riskProfile);
   return getSavedAnalyses().find((record) => record.signature === signature) || null;
 }
 
-export function saveAnalysisRecord({ symbol, articles, report }) {
+export function saveAnalysisRecord({ symbol, articles, report, riskProfile = 'Balanced' }) {
   const normalizedSymbol = String(symbol || '').trim().toUpperCase();
   const normalizedArticles = normalizeArticles(articles);
-  const signature = buildAnalysisSignature(normalizedSymbol, normalizedArticles);
+  const signature = buildAnalysisSignature(normalizedSymbol, normalizedArticles, riskProfile);
   const existingRecords = getSavedAnalyses().filter((record) => record.signature !== signature);
   const nextRecord = {
     id: `${normalizedSymbol}-${Date.now()}`,
@@ -31,6 +31,7 @@ export function saveAnalysisRecord({ symbol, articles, report }) {
     headlines: normalizedArticles.slice(0, 3).map((article) => article.title),
     articles: normalizedArticles,
     report,
+    riskProfile,
   };
 
   const nextRecords = [nextRecord, ...existingRecords].slice(0, MAX_ANALYSIS_RECORDS);
@@ -46,10 +47,11 @@ export function clearSavedAnalyses() {
   saveRecords([]);
 }
 
-export function buildAnalysisSignature(symbol, articles) {
+export function buildAnalysisSignature(symbol, articles, riskProfile = 'Balanced') {
   const normalizedPayload = JSON.stringify({
     symbol: String(symbol || '').trim().toUpperCase(),
     articles: normalizeArticles(articles),
+    riskProfile,
   });
 
   return `analysis-${simpleHash(normalizedPayload)}`;
