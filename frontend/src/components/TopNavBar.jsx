@@ -33,9 +33,9 @@ export default function TopNavBar() {
 
   return (
     <header className="bg-surface/90 backdrop-blur-xl border-b border-white/10 shadow-sm sticky top-0 z-50">
-      <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-3.5 max-w-7xl mx-auto gap-4">
+      <div className="flex justify-between items-center w-full px-3 sm:px-margin-mobile md:px-margin-desktop py-3.5 max-w-7xl mx-auto gap-2 sm:gap-4">
         {/* Left Side: Logo */}
-        <NavLink to="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-90 transition-opacity">
+        <NavLink to="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
           <div className="relative flex items-center justify-center">
             <svg className="w-8 h-8 shrink-0 drop-shadow-[0_0_8px_rgba(77,142,255,0.3)]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -63,7 +63,7 @@ export default function TopNavBar() {
           {navItems.map((item) => (
             <NavLink
               className={({ isActive }) =>
-                `rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 font-label-sm text-xs sm:text-label-sm transition-colors ${
+                `rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 font-label-sm text-[11px] sm:text-label-sm transition-colors ${
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface'
@@ -78,7 +78,7 @@ export default function TopNavBar() {
         </nav>
 
         {/* Right Side: Settings & Stock Analyst Profile */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Settings Shortcut Button */}
           <NavLink
             to="/settings"
@@ -95,20 +95,20 @@ export default function TopNavBar() {
           {/* Profile Menu Dropdown */}
           <div className="relative">
             <button
-              className="flex items-center gap-2 sm:gap-3 rounded-lg border border-outline-variant/30 bg-surface-container/60 px-2 py-2 text-left hover:border-primary/60 transition-colors"
+              className="flex items-center gap-1 lg:gap-3 rounded-lg border border-transparent lg:border-outline-variant/30 bg-transparent lg:bg-surface-container/60 p-0 lg:px-2 lg:py-2 text-left hover:border-primary/60 transition-colors cursor-pointer"
               type="button"
               onClick={() => setProfileOpen((current) => !current)}
               aria-expanded={profileOpen}
               aria-label="Open profile menu"
             >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary font-label-sm text-label-sm shrink-0">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary font-label-sm text-label-sm shrink-0 shadow-sm hover:scale-105 transition-transform duration-200">
                 {initials}
               </span>
               <span className="hidden lg:flex flex-col min-w-0">
                 <span className="font-label-sm text-label-sm text-on-surface truncate">{profile.name}</span>
                 <span className="font-data-mono text-[11px] text-on-surface-variant truncate">{profile.riskProfile}</span>
               </span>
-              <span className="material-symbols-outlined text-on-surface-variant text-base">
+              <span className="hidden lg:inline-block material-symbols-outlined text-on-surface-variant text-base">
                 {profileOpen ? 'expand_less' : 'expand_more'}
               </span>
             </button>
