@@ -288,7 +288,7 @@ export default function StockChart({ symbol, articles = [] }) {
             {/* Custom Tooltip */}
             {hoveredEvent && (
               <div
-                className="absolute z-20 glass-panel rounded-lg p-md max-w-xs pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col gap-xs text-left shadow-2xl border border-outline-variant/50 filter drop-shadow-lg"
+                className="absolute z-20 glass-panel rounded-lg p-md w-72 pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col gap-xs text-left shadow-2xl border border-outline-variant/50 filter drop-shadow-lg"
                 style={{
                   left: `${(hoveredEvent.x / width) * 100}%`,
                   top: `${(hoveredEvent.y / height) * 100 - 8}%`,
