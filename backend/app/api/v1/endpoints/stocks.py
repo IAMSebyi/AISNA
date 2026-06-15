@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 import httpx
 import yfinance as yf
 
-from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot, StockHistory, StockHistoryPoint
+from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot, StockHistory
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
