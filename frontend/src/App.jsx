@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import SideNavBar from './components/SideNavBar';
 import TopNavBar from './components/TopNavBar';
 import Terminal from './pages/Terminal';
 import Analysis from './pages/Analysis';
@@ -9,8 +8,7 @@ import Settings from './pages/Settings';
 function App() {
   return (
     <Router>
-      <div className="bg-background text-on-background min-h-screen flex font-body-md dark">
-        <SideNavBar />
+      <div className="bg-background text-on-background min-h-screen flex flex-col font-body-md dark">
         <main className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
           <TopNavBar />
           <div className="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto pb-24">
