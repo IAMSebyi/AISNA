@@ -51,6 +51,55 @@ const recommendationStyles = {
   Sell: 'text-red-300 bg-red-400/10 border-red-400/30',
 };
 
+const SENTIMENT_OPTIONS = [
+  { value: 'Bullish', label: 'Bullish', color: 'emerald' },
+  { value: 'Somewhat-Bullish', label: 'Somewhat Bullish', color: 'teal' },
+  { value: 'Neutral', label: 'Neutral', color: 'slate' },
+  { value: 'Somewhat-Bearish', label: 'Somewhat Bearish', color: 'orange' },
+  { value: 'Bearish', label: 'Bearish', color: 'red' },
+];
+
+const CATEGORY_OPTIONS = [
+  'Earnings',
+  'Product',
+  'Executive',
+  'Macro',
+  'M&A',
+  'Regulation',
+  'Other',
+];
+
+const getLocalDateString = (isoString) => {
+  if (!isoString) return '';
+  const match = isoString.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) {
+    return match[1];
+  }
+  try {
+    const d = new Date(isoString);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10);
+    }
+  } catch {
+    // Ignore
+  }
+  return '';
+};
+
+const getSentimentBadgeStyles = (sentiment) => {
+  const norm = sentiment ? sentiment.toLowerCase() : '';
+  if (norm.includes('bullish') || norm === 'positive') {
+    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  }
+  if (norm.includes('bearish') || norm === 'negative') {
+    return 'text-red-400 bg-red-500/10 border-red-500/20';
+  }
+  if (norm) {
+    return 'text-sky-400 bg-sky-500/10 border-sky-500/20';
+  }
+  return '';
+};
+
 function emptyArticle() {
   return {
     title: '',
@@ -168,6 +217,7 @@ export default function Analysis() {
   const [lastFetchedSymbol, setLastFetchedSymbol] = useState(initialSymbol);
   const [newsArticles, setNewsArticles] = useState([]);
   const [showArticleEditor, setShowArticleEditor] = useState(false);
+  const [expandedIndex, setExpandedIndex] = useState(0);
   const [, setFavoriteTickersVersion] = useState(0);
   const [searchHistory, setSearchHistory] = useState(() => getSearchHistory());
   const [savedAnalyses, setSavedAnalyses] = useState(() => getSavedAnalyses());
@@ -190,11 +240,23 @@ export default function Analysis() {
   };
 
   const addArticle = () => {
-    setArticles((current) => [...current, emptyArticle()]);
+    setArticles((current) => {
+      const next = [...current, emptyArticle()];
+      setExpandedIndex(next.length - 1);
+      return next;
+    });
   };
 
   const removeArticle = (index) => {
-    setArticles((current) => current.filter((_, articleIndex) => articleIndex !== index));
+    setArticles((current) => {
+      const next = current.filter((_, articleIndex) => articleIndex !== index);
+      if (expandedIndex >= next.length) {
+        setExpandedIndex(next.length - 1);
+      } else if (expandedIndex === index) {
+        setExpandedIndex(Math.max(0, index - 1));
+      }
+      return next;
+    });
   };
 
   const resetSample = () => {
@@ -208,6 +270,7 @@ export default function Analysis() {
     setLastFetchedSymbol('AAPL');
     setNewsArticles([]);
     setShowArticleEditor(false);
+    setExpandedIndex(0);
   };
 
   const handleFetchNews = async () => {
@@ -248,6 +311,7 @@ export default function Analysis() {
         })));
         setLastFetchedSymbol(normalizedSymbol);
         setSearchHistory(addSearchHistoryItem(normalizedSymbol));
+        setExpandedIndex(0);
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch news.');
@@ -472,85 +536,236 @@ export default function Analysis() {
 
             {showArticleEditor && (
               <div className="flex flex-col gap-md">
-                {articles.map((article, index) => (
-                  <article className="rounded-lg border border-outline-variant/20 bg-surface-container/60 p-md flex flex-col gap-md" key={index}>
-                    <div className="flex items-center justify-between gap-md">
-                      <h3 className="font-label-sm text-label-sm text-on-surface">Article {index + 1}</h3>
-                      {articles.length > 1 && (
-                        <button
-                          className="text-on-surface-variant hover:text-error transition-colors"
-                          type="button"
-                          onClick={() => removeArticle(index)}
-                          aria-label={`Remove article ${index + 1}`}
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                        </button>
+                {articles.map((article, index) => {
+                  const isExpanded = expandedIndex === index;
+                  const isStandard = CATEGORY_OPTIONS.filter((opt) => opt !== 'Other').includes(article.category);
+                  const selectedOption = article.category ? (isStandard ? article.category : 'Other') : '';
+                  const titleText = article.title ? String(article.title).trim() : '';
+
+                  return (
+                    <div
+                      className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                        isExpanded
+                          ? 'border-primary/40 bg-surface-container/80 shadow-md'
+                          : 'border-outline-variant/20 bg-surface-container/40 hover:bg-surface-container/60'
+                      }`}
+                      key={index}
+                    >
+                      {/* Accordion Header */}
+                      <div
+                        className="flex items-center justify-between p-4 cursor-pointer select-none gap-3"
+                        onClick={() => setExpandedIndex(isExpanded ? -1 : index)}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Number Badge */}
+                          <span
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
+                              isExpanded ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant'
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                          {/* Title text */}
+                          <span
+                            className={`font-label-sm text-sm truncate max-w-[180px] sm:max-w-[320px] md:max-w-[400px] ${
+                              titleText ? 'text-on-surface font-semibold' : 'text-on-surface-variant/50 italic'
+                            }`}
+                          >
+                            {titleText || 'Untitled Article'}
+                          </span>
+                          
+                          {/* Sentiment Badge (Collapsed only) */}
+                          {!isExpanded && article.sentiment && (
+                            <span className={`hidden xs:inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase ${getSentimentBadgeStyles(article.sentiment)}`}>
+                              {article.sentiment}
+                            </span>
+                          )}
+
+                          {/* Category Badge (Collapsed only) */}
+                          {!isExpanded && article.category && (
+                            <span className="hidden sm:inline-flex rounded border border-outline-variant/30 bg-surface-container-high px-1.5 py-0.5 text-[10px] text-on-surface-variant font-medium">
+                              {article.category}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Delete button (inside header) */}
+                          {articles.length > 1 && (
+                            <button
+                              className="text-on-surface-variant hover:text-error transition-colors p-1 rounded hover:bg-surface-variant/40"
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeArticle(index);
+                              }}
+                              aria-label={`Remove article ${index + 1}`}
+                            >
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          )}
+                          {/* Expand chevron */}
+                          <span className="material-symbols-outlined text-on-surface-variant transition-transform duration-200">
+                            {isExpanded ? 'expand_less' : 'expand_more'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Accordion Body */}
+                      {isExpanded && (
+                        <div className="p-4 border-t border-outline-variant/20 flex flex-col gap-md">
+                          {/* Title */}
+                          <label className="flex flex-col gap-2">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Title *</span>
+                            <input
+                              className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm font-semibold"
+                              maxLength={240}
+                              value={article.title}
+                              onChange={(event) => updateArticle(index, 'title', event.target.value)}
+                              placeholder="Enter article title"
+                              required
+                            />
+                          </label>
+
+                          {/* Source & Date */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                            <label className="flex flex-col gap-2">
+                              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Source</span>
+                              <input
+                                className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                                maxLength={120}
+                                value={article.source}
+                                onChange={(event) => updateArticle(index, 'source', event.target.value)}
+                                placeholder="e.g. Bloomberg, Reuters"
+                              />
+                            </label>
+
+                            <label className="flex flex-col gap-2">
+                              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Published Date</span>
+                              <input
+                                type="date"
+                                className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                                value={getLocalDateString(article.published_at)}
+                                onChange={(event) => updateArticle(index, 'published_at', event.target.value)}
+                              />
+                            </label>
+                          </div>
+
+                          {/* URL */}
+                          <label className="flex flex-col gap-2">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Article URL</span>
+                            <input
+                              className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                              maxLength={2048}
+                              type="url"
+                              value={article.url}
+                              onChange={(event) => updateArticle(index, 'url', event.target.value)}
+                              placeholder="https://example.com/article"
+                            />
+                          </label>
+
+                          {/* Sentiment pill selector */}
+                          <div className="flex flex-col gap-2">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Sentiment</span>
+                            <div className="flex flex-wrap gap-2">
+                              {SENTIMENT_OPTIONS.map((opt) => {
+                                const isSelected = article.sentiment === opt.value;
+                                let btnClass = 'border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:border-primary';
+                                if (isSelected) {
+                                  if (opt.color === 'emerald') btnClass = 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400';
+                                  else if (opt.color === 'teal') btnClass = 'border-teal-500/50 bg-teal-500/15 text-teal-400';
+                                  else if (opt.color === 'slate') btnClass = 'border-slate-500/50 bg-slate-500/15 text-slate-400';
+                                  else if (opt.color === 'orange') btnClass = 'border-orange-500/50 bg-orange-500/15 text-orange-400';
+                                  else if (opt.color === 'red') btnClass = 'border-red-500/50 bg-red-500/15 text-red-400';
+                                }
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => updateArticle(index, 'sentiment', opt.value)}
+                                    className={`rounded-lg border px-3 py-2 text-xs font-label-sm transition-all duration-200 cursor-pointer ${btnClass}`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Category pill selector */}
+                          <div className="flex flex-col gap-2">
+                            <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Category</span>
+                            <div className="flex flex-wrap gap-2">
+                              {CATEGORY_OPTIONS.map((opt) => {
+                                const isSelected = selectedOption === opt;
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                      if (opt === 'Other') {
+                                        updateArticle(index, 'category', 'Custom');
+                                      } else {
+                                        updateArticle(index, 'category', opt);
+                                      }
+                                    }}
+                                    className={`rounded-lg border px-3 py-2 text-xs font-label-sm transition-all duration-200 cursor-pointer ${
+                                      isSelected
+                                        ? 'border-primary/60 bg-primary/10 text-primary'
+                                        : 'border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:border-primary'
+                                    }`}
+                                  >
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {selectedOption === 'Other' && (
+                              <input
+                                className="mt-1 w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                                maxLength={120}
+                                value={article.category === 'Custom' ? '' : article.category}
+                                onChange={(event) => updateArticle(index, 'category', event.target.value)}
+                                placeholder="Type custom category..."
+                              />
+                            )}
+                          </div>
+
+                          {/* Description */}
+                          <label className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Description</span>
+                              <span className="text-[11px] text-on-surface-variant/70">{article.description?.length || 0}/1200</span>
+                            </div>
+                            <textarea
+                              className="min-h-20 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                              maxLength={1200}
+                              value={article.description || ''}
+                              onChange={(event) => updateArticle(index, 'description', event.target.value)}
+                              placeholder="Article description"
+                            />
+                          </label>
+
+                          {/* Content */}
+                          <label className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Content *</span>
+                              <span className="text-[11px] text-on-surface-variant/70">{article.content?.length || 0}/8000</span>
+                            </div>
+                            <textarea
+                              className="min-h-28 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary text-sm"
+                              maxLength={8000}
+                              value={article.content}
+                              onChange={(event) => updateArticle(index, 'content', event.target.value)}
+                              placeholder="Article content"
+                              required
+                            />
+                          </label>
+                        </div>
                       )}
                     </div>
-
-                    <input
-                      className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                      maxLength={240}
-                      value={article.title}
-                      onChange={(event) => updateArticle(index, 'title', event.target.value)}
-                      placeholder="Article title"
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                      <input
-                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                        maxLength={120}
-                        value={article.source}
-                        onChange={(event) => updateArticle(index, 'source', event.target.value)}
-                        placeholder="Source"
-                      />
-                      <input
-                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                        maxLength={40}
-                        value={article.published_at}
-                        onChange={(event) => updateArticle(index, 'published_at', event.target.value)}
-                        placeholder="Published date (YYYY-MM-DD)"
-                      />
-                    </div>
-                    <input
-                      className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                      maxLength={2048}
-                      type="url"
-                      value={article.url}
-                      onChange={(event) => updateArticle(index, 'url', event.target.value)}
-                      placeholder="https://example.com/article"
-                    />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                      <input
-                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                        maxLength={40}
-                        value={article.sentiment || ''}
-                        onChange={(event) => updateArticle(index, 'sentiment', event.target.value)}
-                        placeholder="Provider sentiment label"
-                      />
-                      <input
-                        className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                        maxLength={120}
-                        value={article.category || ''}
-                        onChange={(event) => updateArticle(index, 'category', event.target.value)}
-                        placeholder="Category"
-                      />
-                    </div>
-                    <textarea
-                      className="min-h-20 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                      maxLength={1200}
-                      value={article.description || ''}
-                      onChange={(event) => updateArticle(index, 'description', event.target.value)}
-                      placeholder="Article description"
-                    />
-                    <textarea
-                      className="min-h-28 w-full resize-y rounded-lg border border-outline-variant/40 bg-surface-container-highest px-4 py-3 text-on-surface outline-none focus:border-primary"
-                      maxLength={8000}
-                      value={article.content}
-                      onChange={(event) => updateArticle(index, 'content', event.target.value)}
-                      placeholder="Article content"
-                    />
-                  </article>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
