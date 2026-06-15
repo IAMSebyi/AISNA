@@ -506,7 +506,7 @@ export default function Portfolio() {
 
             {!advisorReport ? (
               <div className="flex flex-col gap-md items-center py-lg text-center">
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-sm">
+                <p className="font-body-md text-body-md text-on-surface-variant max-w-[380px]">
                   Run a complete health check to analyze diversification scores, collective news sentiment, and strategic investment rebalancing notes.
                 </p>
                 <button
