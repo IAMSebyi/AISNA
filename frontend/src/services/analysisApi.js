@@ -35,3 +35,8 @@ function formatAnalysisError(detail, status) {
 export function analyzeNewsReport(payload) {
   return postJson('/news-report', payload);
 }
+
+export function analyzePortfolioReport(payload) {
+  return postJson('/portfolio-report', payload);
+}
+

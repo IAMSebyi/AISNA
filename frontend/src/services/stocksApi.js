@@ -45,3 +45,23 @@ export async function fetchStockHistory(symbol, period = '1mo') {
   return response.json();
 }
 
+export async function fetchMarketSnapshot(symbolsArray) {
+  if (!Array.isArray(symbolsArray) || symbolsArray.length === 0) return [];
+  const symbolsQuery = symbolsArray.map(normalizeStockSymbol).join(',');
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE}/market/snapshot?symbols=${encodeURIComponent(symbolsQuery)}`);
+  } catch {
+    throw new Error('Market prices are currently unavailable. Please try again shortly.');
+  }
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null);
+    const detail = errorPayload?.detail || `Request failed with status ${response.status}`;
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
+
