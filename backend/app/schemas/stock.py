@@ -34,3 +34,16 @@ class MarketSnapshot(BaseModel):
     volume: int
     high: float
     low: float
+
+
+class StockHistoryPoint(BaseModel):
+    date: str
+    close: float
+    volume: int
+
+
+class StockHistory(BaseModel):
+    symbol: str
+    period: str
+    history: list[StockHistoryPoint]
+

@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 import httpx
 import yfinance as yf
 
-from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot
+from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot, StockHistory, StockHistoryPoint
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,48 @@ def get_stock_quote(symbol: str):
         "signal": "BUY" if current_price > base_price else "HOLD",
         "sentiment_score": random.randint(60, 95)
     }
+
+@router.get("/{symbol}/history", response_model=StockHistory)
+def get_stock_history(symbol: str, period: str = "1mo"):
+    symbol = _normalize_symbol(symbol)
+    allowed_periods = {"1mo", "3mo", "6mo", "1y"}
+    if period not in allowed_periods:
+        raise HTTPException(
+            status_code=400,
+            detail="Period must be one of: 1mo, 3mo, 6mo, 1y.",
+        )
+    
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if hist.empty:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No historical price data found for symbol '{symbol}'.",
+            )
+        
+        history_points = []
+        for index, row in hist.iterrows():
+            date_str = index.strftime("%Y-%m-%d") if hasattr(index, "strftime") else str(index)
+            history_points.append({
+                "date": date_str,
+                "close": round(float(row["Close"]), 2),
+                "volume": int(row["Volume"]),
+            })
+            
+        return {
+            "symbol": symbol,
+            "period": period,
+            "history": history_points,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching stock history for {symbol}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not fetch stock history: {str(e)}",
+        )
 
 @router.get("/{symbol}/news", response_model=List[NewsArticle])
 async def get_stock_news(symbol: str, limit: int = Query(default=5, ge=1, le=20)):

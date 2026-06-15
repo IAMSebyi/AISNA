@@ -11,6 +11,7 @@ import { analyzeNewsReport } from '../services/analysisApi';
 import { isFavoriteTicker, toggleFavoriteTicker } from '../services/favoritesStorage';
 import { addSearchHistoryItem, clearSearchHistory, getSearchHistory } from '../services/searchHistoryStorage';
 import { fetchStockNews, isValidStockSymbol, normalizeStockSymbol } from '../services/stocksApi';
+import StockChart from '../components/StockChart';
 
 const initialArticles = [
   {
@@ -163,7 +164,7 @@ export default function Analysis() {
   const [isFetchingNews, setIsFetchingNews] = useState(false);
   const [error, setError] = useState('');
   const [newsNotice, setNewsNotice] = useState('');
-  const [lastFetchedSymbol, setLastFetchedSymbol] = useState('');
+  const [lastFetchedSymbol, setLastFetchedSymbol] = useState(initialSymbol);
   const [newsArticles, setNewsArticles] = useState([]);
   const [showArticleEditor, setShowArticleEditor] = useState(false);
   const [, setFavoriteTickersVersion] = useState(0);
@@ -203,7 +204,7 @@ export default function Analysis() {
     setActiveResultPanel('');
     setError('');
     setNewsNotice('');
-    setLastFetchedSymbol('');
+    setLastFetchedSymbol('AAPL');
     setNewsArticles([]);
     setShowArticleEditor(false);
   };
@@ -287,7 +288,9 @@ export default function Analysis() {
   };
 
   const handleLoadSavedAnalysis = (record) => {
-    setSymbol(record.symbol);
+    const norm = normalizeStockSymbol(record.symbol);
+    setSymbol(norm);
+    setLastFetchedSymbol(norm);
     setArticles(record.articles);
     applyReport(record.report);
     setNewsNotice(`Loaded saved ${record.symbol} report from ${formatHistoryTime(record.createdAt)}.`);
@@ -579,6 +582,9 @@ export default function Analysis() {
             summary={summary}
             sentiment={sentiment}
           />
+          {lastFetchedSymbol && isValidStockSymbol(lastFetchedSymbol) && (
+            <StockChart symbol={lastFetchedSymbol} articles={articles} />
+          )}
           <NewsArticlesPanel articles={newsArticles} isLoading={isFetchingNews} symbol={lastFetchedSymbol || normalizedSymbol} />
           <ResultPanelHost activePanel={activeResultPanel} sentiment={sentiment} summary={summary} />
         </section>

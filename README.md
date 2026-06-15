@@ -132,3 +132,7 @@ A detailed report of all AI tools used during development (OpenAI API, Claude Co
 | US10 | As a developer, I want to automatically test the main functionalities so that I can reduce errors and ensure the application works correctly.                | High     | In Progress |
 | US11 | As a developer, I want a CI/CD pipeline so that builds and tests run automatically on each commit.                                                           | Medium   | Done        |
 | US12 | As a developer, I want to evaluate the AI agents' output so that I can verify that the results are coherent and useful.                                      | High     | In Progress |
+| US13 | As a user, I want to view an interactive historical stock price chart with sentiment overlays so that I can correlate news with price changes.             | Medium   | To Do       |
+| US14 | As a user, I want my selected risk profile to customize the AI news report focus so that the analysis aligns with my personal investment strategy.          | Medium   | To Do       |
+| US15 | As a user, I want to simulate holding a portfolio of stocks and receive an AI-generated portfolio risk assessment so that I can monitor collective sentiment. | Low      | To Do       |
+

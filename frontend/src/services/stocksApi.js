@@ -26,3 +26,22 @@ export async function fetchStockNews(symbol, limit = 5) {
   }
   return response.json();
 }
+
+export async function fetchStockHistory(symbol, period = '1mo') {
+  const normalizedSymbol = normalizeStockSymbol(symbol);
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE}/${encodeURIComponent(normalizedSymbol)}/history?period=${period}`);
+  } catch {
+    throw new Error('Price history is currently unavailable. Please try again shortly.');
+  }
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null);
+    const detail = errorPayload?.detail || `Request failed with status ${response.status}`;
+    throw new Error(detail);
+  }
+  return response.json();
+}
+
