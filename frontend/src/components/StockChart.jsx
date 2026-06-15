@@ -15,6 +15,13 @@ export default function StockChart({ symbol, articles = [] }) {
   const [error, setError] = useState('');
   const [hoveredEvent, setHoveredEvent] = useState(null);
 
+  // Measure / Selection states
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [clickedPoint, setClickedPoint] = useState(null);
+  const [dragStartPoint, setDragStartPoint] = useState(null);
+  const [dragEndPoint, setDragEndPoint] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
     if (!symbol) return;
     let isCancelled = false;
@@ -73,6 +80,64 @@ export default function StockChart({ symbol, articles = [] }) {
     return { x, y, ...point };
   });
 
+  // Mouse handlers for dragging/measuring and crosshair
+  const getClosestPoint = (clientX, currentTarget) => {
+    if (history.length === 0 || points.length === 0) return null;
+    const rect = currentTarget.getBoundingClientRect();
+    const mouseX = ((clientX - rect.left) / rect.width) * width;
+    const i = Math.round(((mouseX - paddingLeft) / chartWidth) * (points.length - 1));
+    const index = Math.max(0, Math.min(points.length - 1, i));
+    return points[index];
+  };
+
+  const handleMouseDown = (event) => {
+    const closestPoint = getClosestPoint(event.clientX, event.currentTarget);
+    if (closestPoint) {
+      setIsDragging(true);
+      setDragStartPoint(closestPoint);
+      setDragEndPoint(closestPoint);
+      setClickedPoint(closestPoint);
+    }
+  };
+
+  const handleMouseMove = (event) => {
+    const closestPoint = getClosestPoint(event.clientX, event.currentTarget);
+    if (closestPoint) {
+      setHoveredPoint(closestPoint);
+      if (isDragging) {
+        setDragEndPoint(closestPoint);
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    if (dragStartPoint && dragEndPoint && dragStartPoint.date === dragEndPoint.date) {
+      // Just a click, clear the range
+      setDragStartPoint(null);
+      setDragEndPoint(null);
+    } else {
+      // Dragged range, clear the click point
+      setClickedPoint(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null);
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  };
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod);
+    setHoveredPoint(null);
+    setClickedPoint(null);
+    setDragStartPoint(null);
+    setDragEndPoint(null);
+    setIsDragging(false);
+  };
+
   const linePath = points.length > 0
     ? points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
     : '';
@@ -124,6 +189,8 @@ export default function StockChart({ symbol, articles = [] }) {
     return '#38bdf8'; // Sky
   };
 
+  const hasRangeActive = dragStartPoint && dragEndPoint && dragStartPoint.date !== dragEndPoint.date;
+
   return (
     <section className="glass-panel rounded-xl p-lg flex flex-col gap-md relative overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-md">
@@ -134,21 +201,38 @@ export default function StockChart({ symbol, articles = [] }) {
           </h2>
         </div>
 
-        <div className="flex items-center bg-surface-container/80 rounded-lg p-1 border border-outline-variant/30 self-start z-20">
-          {PERIODS.map((p) => (
+        <div className="flex items-center self-start z-20">
+          {(clickedPoint || hasRangeActive) && (
             <button
-              key={p.value}
-              className={`px-3 py-1.5 rounded-md font-data-mono text-xs transition-colors cursor-pointer ${
-                period === p.value
-                  ? 'bg-primary text-on-primary font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-              onClick={() => setPeriod(p.value)}
+              onClick={() => {
+                setClickedPoint(null);
+                setDragStartPoint(null);
+                setDragEndPoint(null);
+              }}
+              className="text-on-surface-variant hover:text-error transition-colors font-data-mono text-xs cursor-pointer flex items-center gap-1 mr-3 border border-outline-variant/30 px-2 py-1.5 rounded bg-surface-container/60 hover:border-error/30"
               type="button"
             >
-              {p.label}
+              <span className="material-symbols-outlined text-sm">close</span>
+              Clear Measure
             </button>
-          ))}
+          )}
+
+          <div className="flex items-center bg-surface-container/80 rounded-lg p-1 border border-outline-variant/30">
+            {PERIODS.map((p) => (
+              <button
+                key={p.value}
+                className={`px-3 py-1.5 rounded-md font-data-mono text-xs transition-colors cursor-pointer ${
+                  period === p.value
+                    ? 'bg-primary text-on-primary font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+                onClick={() => handlePeriodChange(p.value)}
+                type="button"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -185,7 +269,7 @@ export default function StockChart({ symbol, articles = [] }) {
         {!error && history.length > 0 && (
           <div className="w-full h-full relative">
             <svg
-              className="w-full h-full overflow-visible"
+              className="w-full h-full overflow-visible select-none"
               viewBox={`0 0 ${width} ${height}`}
               preserveAspectRatio="none"
             >
@@ -253,7 +337,187 @@ export default function StockChart({ symbol, articles = [] }) {
                 </text>
               ))}
 
-              {/* Sentiment Overlay Markers */}
+              {/* Drag range selection graphics */}
+              {hasRangeActive && (
+                <g>
+                  <rect
+                    x={Math.min(dragStartPoint.x, dragEndPoint.x)}
+                    y={paddingTop}
+                    width={Math.abs(dragStartPoint.x - dragEndPoint.x)}
+                    height={chartHeight}
+                    fill="var(--color-primary)"
+                    fillOpacity="0.08"
+                  />
+                  <line
+                    x1={dragStartPoint.x}
+                    y1={paddingTop}
+                    x2={dragStartPoint.x}
+                    y2={height - paddingBottom}
+                    stroke="var(--color-primary)"
+                    strokeWidth="1.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={dragEndPoint.x}
+                    y1={paddingTop}
+                    x2={dragEndPoint.x}
+                    y2={height - paddingBottom}
+                    stroke="var(--color-primary)"
+                    strokeWidth="1.5"
+                    strokeDasharray="2 2"
+                  />
+                  <circle
+                    cx={dragStartPoint.x}
+                    cy={dragStartPoint.y}
+                    r="4.5"
+                    fill="var(--color-primary)"
+                    stroke="var(--color-surface)"
+                    strokeWidth="1.5"
+                  />
+                  <circle
+                    cx={dragEndPoint.x}
+                    cy={dragEndPoint.y}
+                    r="4.5"
+                    fill="var(--color-primary)"
+                    stroke="var(--color-surface)"
+                    strokeWidth="1.5"
+                  />
+                </g>
+              )}
+
+              {/* Single click indicator */}
+              {clickedPoint && !hasRangeActive && (
+                <g>
+                  <line
+                    x1={clickedPoint.x}
+                    y1={paddingTop}
+                    x2={clickedPoint.x}
+                    y2={height - paddingBottom}
+                    stroke="var(--color-primary)"
+                    strokeWidth="1.2"
+                    strokeDasharray="2 2"
+                    className="opacity-70"
+                  />
+                  <circle
+                    cx={clickedPoint.x}
+                    cy={clickedPoint.y}
+                    r="5"
+                    fill="var(--color-primary)"
+                    stroke="var(--color-surface)"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x={clickedPoint.x}
+                    y={clickedPoint.y - 12}
+                    fill="var(--color-primary)"
+                    fontSize="10"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="font-data-mono"
+                    style={{ paintOrder: 'stroke', stroke: 'var(--color-background)', strokeWidth: '3px' }}
+                  >
+                    ${clickedPoint.close.toFixed(2)}
+                  </text>
+                </g>
+              )}
+
+              {/* Hover crosshair indicator (hidden when showing news details hoveredEvent) */}
+              {hoveredPoint && !hoveredEvent && (
+                <g>
+                  <line
+                    x1={hoveredPoint.x}
+                    y1={paddingTop}
+                    x2={hoveredPoint.x}
+                    y2={height - paddingBottom}
+                    stroke="var(--color-outline)"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                    className="opacity-60"
+                  />
+                  <circle
+                    cx={hoveredPoint.x}
+                    cy={hoveredPoint.y}
+                    r="5"
+                    fill="var(--color-primary)"
+                    stroke="var(--color-surface)"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x={hoveredPoint.x}
+                    y={hoveredPoint.y - 12}
+                    fill="var(--color-primary)"
+                    fontSize="10"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="font-data-mono"
+                    style={{ paintOrder: 'stroke', stroke: 'var(--color-background)', strokeWidth: '3px' }}
+                  >
+                    ${hoveredPoint.close.toFixed(2)}
+                  </text>
+                </g>
+              )}
+
+              {/* Range selection bubble overlay */}
+              {(() => {
+                if (!hasRangeActive) return null;
+                const diff = dragEndPoint.close - dragStartPoint.close;
+                const percent = (diff / dragStartPoint.close) * 100;
+                const isPositive = diff >= 0;
+                const diffText = `${isPositive ? '+' : ''}${diff.toFixed(2)} (${isPositive ? '+' : ''}${percent.toFixed(2)}%)`;
+                const centerX = (dragStartPoint.x + dragEndPoint.x) / 2;
+
+                return (
+                  <g className="opacity-95">
+                    <rect
+                      x={centerX - 90}
+                      y={paddingTop}
+                      width={180}
+                      height={34}
+                      rx={6}
+                      fill="var(--color-surface-container)"
+                      stroke={isPositive ? '#10b981' : '#ef4444'}
+                      strokeWidth="1.5"
+                    />
+                    <text
+                      x={centerX}
+                      y={paddingTop + 13}
+                      fill="var(--color-on-surface-variant)"
+                      fontSize="9"
+                      textAnchor="middle"
+                      className="font-data-mono"
+                    >
+                      {dragStartPoint.date} → {dragEndPoint.date}
+                    </text>
+                    <text
+                      x={centerX}
+                      y={paddingTop + 26}
+                      fill={isPositive ? '#10b981' : '#ef4444'}
+                      fontSize="10"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      className="font-data-mono"
+                    >
+                      {diffText}
+                    </text>
+                  </g>
+                );
+              })()}
+
+              {/* Event Capture Overlay (transparent overlay handling mouse measurements) */}
+              <rect
+                x={paddingLeft}
+                y={paddingTop}
+                width={chartWidth}
+                height={chartHeight}
+                fill="transparent"
+                className="cursor-crosshair"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+              />
+
+              {/* Sentiment Overlay Markers (rendered on top so they capture hover tooltips) */}
               {overlayEvents.map((evt, idx) => {
                 const markerColor = getSentimentColor(evt.sentiment);
                 return (
@@ -285,7 +549,7 @@ export default function StockChart({ symbol, articles = [] }) {
               })}
             </svg>
 
-            {/* Custom Tooltip */}
+            {/* Custom Tooltip (for sentiment events) */}
             {hoveredEvent && (
               <div
                 className="absolute z-20 glass-panel rounded-lg p-md w-72 pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col gap-xs text-left shadow-2xl border border-outline-variant/50 filter drop-shadow-lg"

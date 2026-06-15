@@ -583,7 +583,7 @@ export default function Analysis() {
             sentiment={sentiment}
           />
           {lastFetchedSymbol && isValidStockSymbol(lastFetchedSymbol) && (
-            <StockChart symbol={lastFetchedSymbol} articles={articles} />
+            <StockChart key={lastFetchedSymbol} symbol={lastFetchedSymbol} articles={articles} />
           )}
           <NewsArticlesPanel articles={newsArticles} isLoading={isFetchingNews} symbol={lastFetchedSymbol || normalizedSymbol} />
           <ResultPanelHost activePanel={activeResultPanel} sentiment={sentiment} summary={summary} />
