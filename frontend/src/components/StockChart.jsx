@@ -259,10 +259,9 @@ export default function StockChart({ symbol, articles = [] }) {
                 return (
                   <g
                     key={idx}
-                    className="cursor-pointer"
+                    className="cursor-default"
                     onMouseEnter={() => setHoveredEvent(evt)}
                     onMouseLeave={() => setHoveredEvent(null)}
-                    onClick={() => evt.url && window.open(evt.url, '_blank')}
                   >
                     <circle
                       cx={evt.x}
@@ -313,14 +312,12 @@ export default function StockChart({ symbol, articles = [] }) {
                 <h4 className="font-label-sm text-[12px] text-on-surface leading-tight font-bold">
                   {hoveredEvent.title}
                 </h4>
-                <p className="font-data-mono text-[10px] text-primary mt-1">
-                  Price close: ${hoveredEvent.close.toFixed(2)}
-                </p>
-                {hoveredEvent.url && (
-                  <p className="font-data-mono text-[9px] text-on-surface-variant italic">
-                    Click marker to open source article
-                  </p>
-                )}
+                <div className="flex items-center justify-between mt-1 border-t border-outline-variant/20 pt-1">
+                  <span className="font-label-sm text-[10px] text-on-surface-variant">Close Price:</span>
+                  <span className="font-data-mono text-[11px] text-primary font-bold">
+                    ${hoveredEvent.close.toFixed(2)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
