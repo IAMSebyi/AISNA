@@ -1,6 +1,7 @@
 from app.evaluation.schemas import (
     EvaluationReport,
     RecommendationEvaluationCase,
+    RiskProfileEvaluationCase,
     SentimentEvaluationCase,
     SummaryEvaluationCase,
 )
@@ -99,6 +100,32 @@ def evaluate_recommendation(
         _check(
             len(output.factors) > 0,
             "recommendation includes factors",
+        ),
+    ]
+
+    return _build_report(checks)
+
+
+def evaluate_risk_profile_focus(
+    output: NewsSummaryResult,
+    expected: RiskProfileEvaluationCase,
+) -> EvaluationReport:
+    checks = [
+        _check(
+            _contains_all_keywords(output, expected.required_focus_keywords),
+            f"summary reflects {expected.risk_profile} risk profile focus keywords",
+        ),
+        _check(
+            _contains_no_keywords(output, expected.forbidden_focus_keywords),
+            "summary does not contain focus-mismatched keywords",
+        ),
+        _check(
+            len(output.risks) >= expected.min_risks_listed,
+            f"summary lists at least {expected.min_risks_listed} risk(s)",
+        ),
+        _check(
+            len(output.key_points) >= expected.min_key_points,
+            f"summary has at least {expected.min_key_points} key point(s)",
         ),
     ]
 

@@ -1,0 +1,181 @@
+[
+  {
+    "id": "conservative-risk-focus",
+    "description": "Conservative profile: summary should emphasize downside risks, threats, and concerns over positive signals.",
+    "risk_profile": "Conservative",
+    "articles": [
+      {
+        "title": "Company reports quarterly revenue growth amid rising competition",
+        "source": "Reuters",
+        "url": "https://example.com/article-1",
+        "published_at": "2026-05-12",
+        "description": "Revenue grew this quarter, but analysts flagged competitive and regulatory headwinds.",
+        "content": "The company posted quarterly revenue growth driven by strong product demand. However, analysts noted that increasing competition and pending regulatory scrutiny could pressure future margins and limit market expansion."
+      },
+      {
+        "title": "Analysts warn valuation leaves little room for error",
+        "source": "Bloomberg",
+        "url": "https://example.com/article-2",
+        "published_at": "2026-05-12",
+        "description": "Elevated multiples make the stock vulnerable to any negative surprise.",
+        "content": "Several analysts cautioned that the current valuation already prices in optimistic assumptions. Any demand slowdown, margin compression, or regulatory action could trigger a significant correction. Export restrictions were also cited as a key downside risk."
+      }
+    ],
+    "summary_output": {
+      "symbol": "EXMP",
+      "short_summary": "Revenue grew this quarter, but analysts flagged valuation risk, competitive threats, and regulatory concerns as significant headwinds.",
+      "detailed_summary": "While the company reported revenue growth, the investment case carries notable risks. Increasing competition could erode pricing power, and pending regulatory scrutiny may restrict market access. Analysts warned that the elevated valuation leaves no room for disappointment, with any demand slowdown or margin compression likely to cause a sharp correction. Export restrictions were also identified as a key downside risk.",
+      "key_points": [
+        "Revenue growth was reported this quarter.",
+        "Increasing competition poses a threat to future margins.",
+        "Regulatory scrutiny could restrict market access.",
+        "Elevated valuation increases downside risk if demand weakens."
+      ],
+      "risks": [
+        "Competitive pressure may erode pricing power and margins.",
+        "Pending regulatory action could limit market expansion.",
+        "High valuation multiples leave little margin for error.",
+        "Export restrictions represent a key downside risk."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Company reports quarterly revenue growth amid rising competition",
+          "url": "https://example.com/article-1"
+        },
+        {
+          "article_index": 2,
+          "title": "Analysts warn valuation leaves little room for error",
+          "url": "https://example.com/article-2"
+        }
+      ]
+    },
+    "risk_profile_expectations": {
+      "id": "conservative-risk-focus-check",
+      "risk_profile": "Conservative",
+      "required_focus_keywords": ["risk", "competition", "concern", "pressure", "restriction"],
+      "forbidden_focus_keywords": ["no downside", "guaranteed growth"],
+      "min_risks_listed": 3,
+      "min_key_points": 3
+    }
+  },
+  {
+    "id": "aggressive-growth-focus",
+    "description": "Aggressive profile: summary should emphasize growth catalysts, expansion opportunities, and upside momentum.",
+    "risk_profile": "Aggressive",
+    "articles": [
+      {
+        "title": "Company reports record revenue driven by strong product demand",
+        "source": "Reuters",
+        "url": "https://example.com/article-3",
+        "published_at": "2026-05-12",
+        "description": "Record revenue signals strong market adoption and expanding customer base.",
+        "content": "The company posted record revenue this quarter, driven by exceptional product demand and rapid market adoption. Management raised full-year guidance, citing accelerating growth in core and adjacent markets."
+      },
+      {
+        "title": "Industry spending expected to accelerate through next year",
+        "source": "MarketWatch",
+        "url": "https://example.com/article-4",
+        "published_at": "2026-05-12",
+        "description": "Increased industry capex signals sustained demand growth.",
+        "content": "Major industry players have significantly raised their capital expenditure plans, with expanded product adoption cited as the primary growth driver. The company is expected to capture the majority of incremental spending, positioning it for continued revenue expansion and market share gains."
+      }
+    ],
+    "summary_output": {
+      "symbol": "EXMP",
+      "short_summary": "Record revenue and raised guidance reflect strong market adoption, with accelerating industry spending pointing to a sustained growth runway.",
+      "detailed_summary": "The company delivered record revenue fueled by exceptional product demand and rapid customer adoption. Management raised full-year guidance on the back of strong momentum in core and adjacent markets. Increased industry capital expenditure signals that demand will continue to grow, with the company well-positioned to capture the majority of incremental spending. This represents a significant market expansion opportunity with strong upside potential.",
+      "key_points": [
+        "Record revenue driven by strong product demand and adoption.",
+        "Management raised full-year guidance on accelerating growth.",
+        "Industry capex increases signal sustained demand expansion.",
+        "Company positioned to capture majority of incremental spending.",
+        "Adjacent market expansion presents additional upside opportunity."
+      ],
+      "risks": [
+        "Supply constraints may limit ability to fully capture demand."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Company reports record revenue driven by strong product demand",
+          "url": "https://example.com/article-3"
+        },
+        {
+          "article_index": 2,
+          "title": "Industry spending expected to accelerate through next year",
+          "url": "https://example.com/article-4"
+        }
+      ]
+    },
+    "risk_profile_expectations": {
+      "id": "aggressive-growth-focus-check",
+      "risk_profile": "Aggressive",
+      "required_focus_keywords": ["growth", "demand", "expansion", "opportunity", "adoption"],
+      "forbidden_focus_keywords": ["collapse", "bankruptcy"],
+      "min_risks_listed": 0,
+      "min_key_points": 4
+    }
+  },
+  {
+    "id": "balanced-neutral-focus",
+    "description": "Balanced profile: summary should weigh growth drivers and risks equally without strongly favoring either side.",
+    "risk_profile": "Balanced",
+    "articles": [
+      {
+        "title": "Company reports solid revenue growth with raised guidance",
+        "source": "CNBC",
+        "url": "https://example.com/article-5",
+        "published_at": "2026-05-13",
+        "description": "Strong core segment growth led management to raise annual guidance.",
+        "content": "The company reported solid revenue growth in its core segment, driven by increased customer adoption and market expansion. Management raised its full-year guidance, pointing to continued momentum in key product lines."
+      },
+      {
+        "title": "Customer spending remains cautious amid macroeconomic uncertainty",
+        "source": "Bloomberg",
+        "url": "https://example.com/article-6",
+        "published_at": "2026-05-13",
+        "description": "Macro headwinds are causing customers to scrutinize discretionary budgets.",
+        "content": "Despite solid top-line results, customers remain cautious on discretionary spending due to macroeconomic uncertainty. Industry surveys indicate that budget deferrals are increasing, which could create headwinds for the company's growth in coming quarters."
+      }
+    ],
+    "summary_output": {
+      "symbol": "EXMP",
+      "short_summary": "Solid revenue growth and raised guidance are offset by cautious customer spending and macroeconomic uncertainty, creating a balanced risk-reward outlook.",
+      "detailed_summary": "The company reported solid revenue growth in its core segment, supported by increased customer adoption and raised full-year guidance. However, macroeconomic uncertainty is prompting customers to defer discretionary spending, which could limit growth in coming quarters. The overall picture is balanced: core momentum is a clear strength, but near-term headwinds from cautious budgets and macro risk warrant monitoring.",
+      "key_points": [
+        "Solid revenue growth driven by core segment adoption.",
+        "Management raised full-year guidance on continued momentum.",
+        "Customers are deferring discretionary spending due to macro uncertainty.",
+        "Budget deferrals could create headwinds in coming quarters."
+      ],
+      "risks": [
+        "Cautious customer spending could limit near-term growth.",
+        "Macroeconomic uncertainty may cause further budget deferrals."
+      ],
+      "source_count": 2,
+      "citations": [
+        {
+          "article_index": 1,
+          "title": "Company reports solid revenue growth with raised guidance",
+          "url": "https://example.com/article-5"
+        },
+        {
+          "article_index": 2,
+          "title": "Customer spending remains cautious amid macroeconomic uncertainty",
+          "url": "https://example.com/article-6"
+        }
+      ]
+    },
+    "risk_profile_expectations": {
+      "id": "balanced-neutral-focus-check",
+      "risk_profile": "Balanced",
+      "required_focus_keywords": ["growth", "risk", "cautious", "uncertainty"],
+      "forbidden_focus_keywords": ["collapse", "record losses"],
+      "min_risks_listed": 1,
+      "min_key_points": 3
+    }
+  }
+]

@@ -32,3 +32,12 @@ class RecommendationEvaluationCase(BaseModel):
     id: str
     expected_action: RecommendationLabel
     min_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class RiskProfileEvaluationCase(BaseModel):
+    id: str
+    risk_profile: str = Field(..., pattern="^(Conservative|Balanced|Aggressive)$")
+    required_focus_keywords: List[str] = Field(default_factory=list)
+    forbidden_focus_keywords: List[str] = Field(default_factory=list)
+    min_risks_listed: int = Field(default=0, ge=0)
+    min_key_points: int = Field(default=1, ge=1)
