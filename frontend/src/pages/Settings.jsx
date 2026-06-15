@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { getProfile, RISK_PROFILES, saveProfile } from '../services/profileStorage';
 
+const RISK_PROFILE_META = {
+  Conservative: {
+    icon: 'shield',
+    description: 'Prioritizes downside risks, regulatory concerns, and red flags. Highly critical of positive sentiment.',
+  },
+  Balanced: {
+    icon: 'balance',
+    description: 'Weighs growth drivers and positive developments equally against risk factors and headwinds.',
+  },
+  Aggressive: {
+    icon: 'rocket_launch',
+    description: 'Focuses on growth catalysts, market expansion, and upside momentum. De-emphasizes minor risks.',
+  },
+};
+
 export default function Settings() {
   const [profile, setProfile] = useState(() => getProfile());
   const [notice, setNotice] = useState('');
@@ -52,20 +67,30 @@ export default function Settings() {
           <div className="flex flex-col gap-2">
             <span className="font-label-sm text-label-sm text-on-surface-variant uppercase">Risk Profile</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm">
-              {RISK_PROFILES.map((riskProfile) => (
-                <button
-                  className={`rounded-lg border px-4 py-3 font-label-sm text-label-sm transition-colors ${
-                    profile.riskProfile === riskProfile
-                      ? 'border-primary/60 bg-primary/10 text-primary'
-                      : 'border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:border-primary'
-                  }`}
-                  key={riskProfile}
-                  onClick={() => setProfile((current) => ({ ...current, riskProfile }))}
-                  type="button"
-                >
-                  {riskProfile}
-                </button>
-              ))}
+              {RISK_PROFILES.map((riskProfile) => {
+                const isSelected = profile.riskProfile === riskProfile;
+                const meta = RISK_PROFILE_META[riskProfile];
+                return (
+                  <button
+                    className={`rounded-lg border px-4 py-3 text-left flex flex-col gap-1 transition-colors ${
+                      isSelected
+                        ? 'border-primary/60 bg-primary/10 text-primary'
+                        : 'border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:border-primary'
+                    }`}
+                    key={riskProfile}
+                    onClick={() => setProfile((current) => ({ ...current, riskProfile }))}
+                    type="button"
+                  >
+                    <span className="flex items-center gap-2 font-label-sm text-label-sm">
+                      <span className="material-symbols-outlined text-base">{meta.icon}</span>
+                      {riskProfile}
+                    </span>
+                    <span className={`font-body-md text-[11px] leading-tight ${isSelected ? 'text-primary/70' : 'text-on-surface-variant/70'}`}>
+                      {meta.description}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
