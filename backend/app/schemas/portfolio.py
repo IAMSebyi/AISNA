@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class PortfolioAsset(BaseModel):
     symbol: str = Field(..., min_length=1, max_length=12)
@@ -10,6 +10,8 @@ class PortfolioReportRequest(BaseModel):
     assets: list[PortfolioAsset] = Field(..., min_length=1)
 
 class PortfolioReportResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     summary: str
     diversification_score: int = Field(..., ge=0, le=100)
     sentiment_risk: str = Field(..., pattern="^(Low|Medium|High)$")

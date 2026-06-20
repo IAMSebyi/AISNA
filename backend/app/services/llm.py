@@ -51,6 +51,7 @@ class OpenAIResponsesClient:
         schema_name: str,
     ) -> Dict[str, Any]:
         try:
+            strict_schema = self._make_schema_strict(schema)
             response = await self.client.responses.create(
                 model=self.model,
                 instructions=instructions,
@@ -60,7 +61,7 @@ class OpenAIResponsesClient:
                     "format": {
                         "type": "json_schema",
                         "name": schema_name,
-                        "schema": schema,
+                        "schema": strict_schema,
                         "strict": True,
                     }
                 },
@@ -72,3 +73,13 @@ class OpenAIResponsesClient:
             return json.loads(response.output_text)
         except (AttributeError, json.JSONDecodeError) as exc:
             raise LLMServiceError("OpenAI response did not contain valid JSON output.") from exc
+
+    def _make_schema_strict(self, schema: Any) -> Any:
+        if isinstance(schema, dict):
+            new_schema = {k: self._make_schema_strict(v) for k, v in schema.items()}
+            if new_schema.get("type") == "object" or "properties" in new_schema:
+                new_schema["additionalProperties"] = False
+            return new_schema
+        elif isinstance(schema, list):
+            return [self._make_schema_strict(item) for item in schema]
+        return schema
