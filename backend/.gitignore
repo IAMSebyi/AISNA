@@ -23,3 +23,6 @@ dist/
 
 # Logs
 *.log
+
+# News API cache
+.cache/
