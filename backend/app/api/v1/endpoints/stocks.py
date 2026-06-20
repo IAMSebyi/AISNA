@@ -10,6 +10,7 @@ import yfinance as yf
 
 from app.schemas.stock import StockQuote, NewsArticle, MarketSnapshot, StockHistory
 from app.core.config import settings
+from app.services import news_cache
 
 logger = logging.getLogger(__name__)
 
@@ -125,40 +126,75 @@ def get_stock_history(symbol: str, period: str = "1mo"):
 async def get_stock_news(symbol: str, limit: int = Query(default=5, ge=1, le=20)):
     symbol = _normalize_symbol(symbol)
 
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                ALPHA_VANTAGE_NEWS_URL,
-                params={
-                    "function": "NEWS_SENTIMENT",
-                    "tickers": symbol,
-                    "apikey": settings.ALPHA_VANTAGE_API_KEY,
-                },
-                timeout=10.0,
+    if settings.NEWS_CACHE_ENABLED:
+        cached_feed, is_stale = news_cache.get(symbol)
+        if cached_feed is not None and not is_stale:
+            return _process_feed(cached_feed, symbol)[:limit]
+    else:
+        cached_feed, is_stale = None, False
+
+    lock = await news_cache.lock(symbol)
+    async with lock:
+        # Re-check after acquiring lock (another coroutine may have fetched while we waited)
+        if settings.NEWS_CACHE_ENABLED:
+            cached_feed, is_stale = news_cache.get(symbol)
+            if cached_feed is not None and not is_stale:
+                return _process_feed(cached_feed, symbol)[:limit]
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    ALPHA_VANTAGE_NEWS_URL,
+                    params={
+                        "function": "NEWS_SENTIMENT",
+                        "tickers": symbol,
+                        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+                    },
+                    timeout=10.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+
+            if _is_rate_limited(data):
+                logger.warning("Alpha Vantage rate limit hit for %s", symbol)
+                if cached_feed is not None:
+                    return _process_feed(cached_feed, symbol)[:limit]
+                return _fallback_news(symbol)[:limit]
+
+            feed = data.get("feed") or []
+            if not feed:
+                logger.warning("Alpha Vantage returned no feed for %s: %s", symbol, data)
+                if cached_feed is not None:
+                    return _process_feed(cached_feed, symbol)[:limit]
+                return _fallback_news(symbol)[:limit]
+
+            if settings.NEWS_CACHE_ENABLED:
+                news_cache.set(symbol, feed)
+
+            result = _process_feed(feed, symbol)
+            if not result:
+                logger.warning("Alpha Vantage returned no text-relevant articles for %s.", symbol)
+                return _fallback_news(symbol)[:limit]
+            return result[:limit]
+
+        except httpx.HTTPError as e:
+            logger.error("Error fetching news for %s: %s", symbol, e)
+            if cached_feed is not None:
+                logger.info("Serving stale cache for %s after fetch error", symbol)
+                return _process_feed(cached_feed, symbol)[:limit]
+            raise HTTPException(
+                status_code=502,
+                detail="Stock news provider is currently unavailable. Please try again later.",
             )
-            response.raise_for_status()
-            data = response.json()
 
-        feed = data.get("feed") or []
-        if not feed:
-            logger.warning("Alpha Vantage returned no feed for %s: %s", symbol, data)
-            return _fallback_news(symbol)[:limit]
 
-        mapped_articles = [_map_alpha_vantage_article(item, symbol) for item in feed]
-        relevant_articles = [
-            article for article in mapped_articles if _has_requested_symbol_context(symbol, article)
-        ]
-        if not relevant_articles:
-            logger.warning("Alpha Vantage returned no text-relevant articles for %s.", symbol)
-            return _fallback_news(symbol)[:limit]
+def _is_rate_limited(data: dict) -> bool:
+    return bool(data.get("Note") or data.get("Information"))
 
-        return relevant_articles[:limit]
-    except httpx.HTTPError as e:
-        logger.error("Error fetching news for %s: %s", symbol, e)
-        raise HTTPException(
-            status_code=502,
-            detail="Stock news provider is currently unavailable. Please try again later.",
-        )
+
+def _process_feed(feed: list, symbol: str) -> list[dict]:
+    mapped = [_map_alpha_vantage_article(item, symbol) for item in feed]
+    return [a for a in mapped if _has_requested_symbol_context(symbol, a)]
 
 
 def _normalize_symbol(symbol: str) -> str:

@@ -1,11 +1,21 @@
+import pytest
 from fastapi.testclient import TestClient
 import httpx
 
 from app.api.v1.endpoints import stocks
+from app.services import news_cache
 from app.main import app
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def clear_news_cache(tmp_path, monkeypatch):
+    news_cache.clear()
+    monkeypatch.setattr(stocks.settings, "NEWS_CACHE_DIR", str(tmp_path / "news"))
+    yield
+    news_cache.clear()
 
 
 class FakeResponse:
@@ -196,3 +206,117 @@ def test_stock_news_returns_provider_error_when_external_api_fails(monkeypatch):
     assert response.json()["detail"] == (
         "Stock news provider is currently unavailable. Please try again later."
     )
+
+
+_AAPL_FEED = {
+    "feed": [
+        {
+            "title": "Apple shares rise after services growth",
+            "source": "Reuters",
+            "url": "https://example.com/aapl-services",
+            "time_published": "20260510T123000",
+            "summary": "Apple services revenue continued to grow.",
+            "overall_sentiment_label": "Positive",
+            "category_within_source": "Markets",
+            "ticker_sentiment": [
+                {
+                    "ticker": "AAPL",
+                    "relevance_score": "0.91",
+                    "ticker_sentiment_score": "0.42",
+                    "ticker_sentiment_label": "Somewhat-Bullish",
+                }
+            ],
+        }
+    ]
+}
+
+
+def test_stock_news_cache_hit_skips_second_api_call(monkeypatch):
+    call_count = {"n": 0}
+
+    class CountingClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return None
+
+        async def get(self, url, *, params, timeout):
+            call_count["n"] += 1
+            return FakeResponse(_AAPL_FEED)
+
+    monkeypatch.setattr(stocks.httpx, "AsyncClient", CountingClient)
+
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    assert call_count["n"] == 1
+
+
+def test_stock_news_cache_expired_triggers_refetch(monkeypatch):
+    import time
+
+    call_count = {"n": 0}
+
+    class CountingClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return None
+
+        async def get(self, url, *, params, timeout):
+            call_count["n"] += 1
+            return FakeResponse(_AAPL_FEED)
+
+    monkeypatch.setattr(stocks.httpx, "AsyncClient", CountingClient)
+
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    # Manually expire the cache entry
+    news_cache._store["AAPL"]["fetched_at"] = time.time() - 9999
+
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    assert call_count["n"] == 2
+
+
+def test_stock_news_stale_cache_served_on_api_failure(monkeypatch):
+    install_fake_alpha_vantage(monkeypatch, _AAPL_FEED)
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    # Expire and then make AV fail
+    import time
+    news_cache._store["AAPL"]["fetched_at"] = time.time() - 9999
+    monkeypatch.setattr(stocks.httpx, "AsyncClient", FailingAsyncClient)
+
+    response = client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    assert response.status_code == 200
+    articles = response.json()
+    assert len(articles) == 1
+    assert articles[0]["source"] == "Reuters"
+
+
+def test_stock_news_stale_cache_served_on_rate_limit(monkeypatch):
+    import time
+
+    install_fake_alpha_vantage(monkeypatch, _AAPL_FEED)
+    client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    news_cache._store["AAPL"]["fetched_at"] = time.time() - 9999
+    install_fake_alpha_vantage(monkeypatch, {"Note": "Thank you for using Alpha Vantage!"})
+
+    response = client.get("/api/v1/stocks/AAPL/news?limit=1")
+
+    assert response.status_code == 200
+    assert response.json()[0]["source"] == "Reuters"
+
+
+def test_stock_news_returns_fallback_when_no_cache_and_rate_limited(monkeypatch):
+    install_fake_alpha_vantage(monkeypatch, {"Note": "Thank you for using Alpha Vantage!"})
+
+    response = client.get("/api/v1/stocks/TSLA/news")
+
+    assert response.status_code == 200
+    assert response.json()[0]["source"] == "Alpha Vantage Fallback"

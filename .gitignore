@@ -4,6 +4,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+pyrightconfig.json
 
 # Environment files
 .env

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
     ALPHA_VANTAGE_API_KEY: str = "demo"
+    NEWS_CACHE_TTL_SECONDS: int = 3600
+    NEWS_CACHE_DIR: str = ".cache/news"
+    NEWS_CACHE_ENABLED: bool = True
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-5.4-mini"
     OPENAI_REASONING_EFFORT: str = "low"
