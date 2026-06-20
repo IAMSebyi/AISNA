@@ -25,6 +25,201 @@ This project is developed as part of the Software Development Methods laboratory
 - Evaluation workflow for summary quality, sentiment labels, recommendation logic, and risk profile focus
 - FastAPI endpoints exposed under `/api/v1`
 
+## System Architecture & UML Diagrams
+
+This section describes the high-level architecture, module design, and workflow sequence of AISNA.
+
+### 1. Component & Architecture Diagram
+The diagram below illustrates the communication flow between the React Frontend (Pages, Components, and Local Storage Services), the FastAPI Backend (Endpoints, Cache, recommendations service, and AI Agents), and the External APIs (Yahoo Finance, Alpha Vantage, and OpenAI):
+
+```mermaid
+graph TD
+    subgraph Frontend [React Frontend]
+        App[App.jsx] --> TopNavBar[TopNavBar.jsx]
+        App --> Router[React Router]
+        Router --> TerminalPage[Terminal.jsx]
+        Router --> AnalysisPage[Analysis.jsx]
+        Router --> PortfolioPage[Portfolio.jsx]
+        Router --> SettingsPage[Settings.jsx]
+        
+        AnalysisPage --> StockChart[StockChart.jsx]
+        
+        TerminalPage --> stocksApi[stocksApi.js]
+        AnalysisPage --> analysisApi[analysisApi.js]
+        PortfolioPage --> analysisApi
+        
+        TerminalPage --> favoritesStorage[favoritesStorage.js]
+        TerminalPage --> searchHistoryStorage[searchHistoryStorage.js]
+        AnalysisPage --> analysisArchiveStorage[analysisArchiveStorage.js]
+        PortfolioPage --> portfolioStorage[portfolioStorage.js]
+        SettingsPage --> profileStorage[profileStorage.js]
+    end
+
+    subgraph Backend [FastAPI Backend]
+        main[main.py] --> api_router[api.py Router]
+        api_router --> stocks_endpoints[stocks.py]
+        api_router --> analysis_endpoints[analysis.py]
+        api_router --> portfolio_endpoints[portfolio.py]
+        
+        stocks_endpoints --> news_cache[news_cache.py]
+        
+        analysis_endpoints --> news_report_agent[NewsReportAgent]
+        analysis_endpoints --> recommendations_service[recommendations.py]
+        
+        portfolio_endpoints --> portfolio_agent[PortfolioAdvisorAgent]
+    end
+
+    subgraph External_APIs [External APIs & Services]
+        news_cache --> alpha_vantage[Alpha Vantage API]
+        portfolio_agent --> yfinance[Yahoo Finance yfinance]
+        stocks_endpoints --> yfinance
+        news_report_agent --> openai_client[OpenAIResponsesClient]
+        portfolio_agent --> openai_client
+        openai_client --> openai_api[OpenAI API]
+    end
+
+    classDef frontend fill:#3b82f6,stroke:#1d4ed8,color:#fff;
+    classDef backend fill:#10b981,stroke:#047857,color:#fff;
+    classDef external fill:#f59e0b,stroke:#d97706,color:#fff;
+    
+    class App,TopNavBar,Router,TerminalPage,AnalysisPage,PortfolioPage,SettingsPage,StockChart,stocksApi,analysisApi,favoritesStorage,searchHistoryStorage,analysisArchiveStorage,portfolioStorage,profileStorage frontend;
+    class main,api_router,stocks_endpoints,analysis_endpoints,portfolio_endpoints,news_cache,news_report_agent,recommendations_service,portfolio_agent,openai_client backend;
+    class alpha_vantage,yfinance,openai_api external;
+```
+
+### 2. Class & Interface Relationships
+This diagram shows the main backend agents, client interfaces, and schemas:
+
+```mermaid
+classDiagram
+    class BaseAgent {
+        <<abstract>>
+        +name: str
+        +run(agent_input)*
+    }
+
+    class NewsReportAgent {
+        +name: str = "news_report"
+        +llm_client: LLMClient
+        +__init__(llm_client: LLMClient)
+        +run(agent_input: NewsReportRequest) NewsReportAgentResult
+        -_filter_relevant_articles(symbol, articles)
+    }
+
+    class PortfolioAdvisorAgent {
+        +name: str = "portfolio_advisor"
+        +llm_client: LLMClient
+        +__init__(llm_client: LLMClient)
+        +run(agent_input: PortfolioReportRequest) PortfolioReportResult
+    }
+
+    class LLMClient {
+        <<interface>>
+        +generate_json(instructions, prompt, schema, schema_name)
+    }
+
+    class OpenAIResponsesClient {
+        +client: AsyncOpenAI
+        +model: str
+        +__init__()
+        +generate_json(instructions, prompt, schema, schema_name)
+        -_make_schema_strict(schema)
+    }
+
+    class NewsReportRequest {
+        +symbol: str
+        +risk_profile: str
+        +articles: List[NewsArticleForSummary]
+    }
+
+    class NewsReportAgentResult {
+        +summary: NewsSummary
+        +sentiment: NewsSentiment
+    }
+
+    class NewsReportResult {
+        +summary: NewsSummary
+        +sentiment: NewsSentiment
+        +recommendation: Recommendation
+    }
+
+    class PortfolioReportRequest {
+        +assets: List[PortfolioAsset]
+    }
+
+    class PortfolioReportResult {
+        +diversification_score: int
+        +sentiment_risk: str
+        +summary: str
+        +advisory_notes: List[str]
+    }
+
+    BaseAgent <|-- NewsReportAgent
+    BaseAgent <|-- PortfolioAdvisorAgent
+    LLMClient <|.. OpenAIResponsesClient
+    NewsReportAgent --> LLMClient : uses
+    PortfolioAdvisorAgent --> LLMClient : uses
+    NewsReportAgent ..> NewsReportRequest : inputs
+    NewsReportAgent ..> NewsReportAgentResult : outputs
+    PortfolioAdvisorAgent ..> PortfolioReportRequest : inputs
+    PortfolioAdvisorAgent ..> PortfolioReportResult : outputs
+```
+
+### 3. AI Analysis Sequence Workflow
+This sequence diagram shows the step-by-step lifecycle of an AI stock report request (including cache checks, yfinance/Alpha Vantage queries, risk profile instructions injection, and final OpenAI structured completions):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Investor
+    participant FE as React Frontend (Analysis/Terminal)
+    participant BE as FastAPI Endpoints (analysis.py / stocks.py)
+    participant Cache as news_cache.py
+    participant AV as Alpha Vantage API
+    participant Agent as NewsReportAgent
+    participant LLM as OpenAIResponsesClient
+    participant OpenAI as OpenAI API GPT-4o-mini
+    participant Recs as recommendations.py
+
+    User->>FE: Select Symbol (e.g., TSLA) & Risk Profile
+    FE->>BE: GET /api/v1/stocks/{symbol}/news
+    activate BE
+    BE->>Cache: Check cached news
+    alt Cache hit & not stale
+        Cache-->>BE: Return cached articles
+    else Cache miss / stale
+        BE->>AV: Fetch live news (tickers={symbol})
+        AV-->>BE: Return feed data
+        BE->>Cache: Save feed in cache
+    end
+    BE-->>FE: Return processed articles list
+    deactivate BE
+
+    FE->>FE: Display news articles to User
+    FE->>BE: POST /api/v1/analysis/news-report (articles + risk_profile)
+    activate BE
+    BE->>Agent: run(NewsReportRequest)
+    activate Agent
+    Agent->>Agent: Filter relevant articles & inject risk profile instructions
+    Agent->>LLM: generate_json(instructions, prompt, schema)
+    activate LLM
+    LLM->>OpenAI: Request JSON completion (strict format)
+    OpenAI-->>LLM: JSON response text
+    LLM-->>Agent: Parsed JSON dict
+    deactivate LLM
+    Agent-->>BE: NewsReportAgentResult (Summary + Sentiment)
+    deactivate Agent
+    
+    BE->>Recs: generate_recommendation(sentiment)
+    activate Recs
+    Recs-->>BE: Recommendation (Buy/Hold/Sell & Reason)
+    deactivate Recs
+
+    BE-->>FE: NewsReportResult (Summary, Sentiment, Recommendation)
+    deactivate BE
+    FE->>User: Render AI stock report & charts
+```
+
 ## Backend Setup
 
 From the repository root:
